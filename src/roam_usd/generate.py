@@ -59,7 +59,7 @@ def run_driver(
     save = Path(save_dir)
     save.mkdir(parents=True, exist_ok=True)
     command = [
-        roam_python or sys.executable,
+        interpreter_path(roam_python),
         "-I",  # no script directory, user site or PYTHON* variables on sys.path
         "-B",  # never write __pycache__ into the user's checkout
         str(DRIVER),
@@ -83,7 +83,7 @@ def run_driver(
 def list_roam_classes(roam: str | Path, roam_python: str | None = None) -> list[str]:
     """Entity classes Roam's loader knows at ``roam`` (read at run time by the driver)."""
     checkout = check_checkout(roam)
-    command = [roam_python or sys.executable, "-I", "-B", str(DRIVER), "--checkout"]
+    command = [interpreter_path(roam_python), "-I", "-B", str(DRIVER), "--checkout"]
     result = _run([*command, str(checkout), "--list-classes"], checkout)
     return driver_result(result.stdout)
 
@@ -95,6 +95,19 @@ def driver_result(stdout: str) -> Any:
         if line.startswith(RESULT_PREFIX):
             return json.loads(line[len(RESULT_PREFIX) :])
     raise GenerateError("Roam's generator gave no result:\n" + stdout[-2000:])
+
+
+def interpreter_path(roam_python: str | None) -> str:
+    """The interpreter to run the driver with. A path (anything with a separator) is made
+    absolute against the caller's directory, since the driver runs with the checkout as
+    its working directory; symlinks are kept (a venv's python is one). A bare name is
+    left for PATH lookup."""
+    if not roam_python:
+        return sys.executable
+    seps = [os.sep] + ([os.altsep] if os.altsep else [])
+    if any(sep in roam_python for sep in seps):
+        return os.path.abspath(os.path.expanduser(roam_python))
+    return roam_python
 
 
 def _run(command: list[str], checkout: Path) -> subprocess.CompletedProcess:
@@ -187,12 +200,11 @@ def generate_seed(
     stage_path = out / stage_name(seed, binary)
     output_format(stage_path, binary)
     checkout = check_checkout(roam)
+    kept = out / f"seed_{seed}_save"
+    if keep_save and kept.exists() and not (kept / MANIFEST).is_file():
+        raise GenerateError(f"{kept} exists and was not written by roam-usd")
     with tempfile.TemporaryDirectory(prefix=f"roam-usd-seed-{seed}-") as tmp:
-        save_dir = out / f"seed_{seed}_save" if keep_save else Path(tmp) / "save"
-        if keep_save and save_dir.exists():
-            if not (save_dir / MANIFEST).is_file():
-                raise GenerateError(f"{save_dir} exists and was not written by roam-usd")
-            shutil.rmtree(save_dir)
+        save_dir = Path(tmp) / "save"
         run_driver(checkout, seed, save_dir, radius, cave_depth, home, roam_python)
         world = read_generated(save_dir, source=f"seed {seed}")
         options = ExportOptions(
@@ -200,4 +212,10 @@ def generate_seed(
             roam_checkout=checkout,
             include_ids=False,
         )
-        return export_world(world, stage_path, binary=binary, options=options)
+        stage = export_world(world, stage_path, binary=binary, options=options)
+        if keep_save:
+            # Replace an earlier kept save only once this run has fully succeeded.
+            if kept.exists():
+                shutil.rmtree(kept)
+            shutil.copytree(save_dir, kept)
+        return stage

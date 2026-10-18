@@ -14,6 +14,7 @@ output directory given on the command line.
 from __future__ import annotations
 
 import argparse
+import importlib
 import inspect
 import json
 import os
@@ -198,16 +199,51 @@ def generate(
 
 
 def list_classes(checkout: str) -> list[str]:
-    """Entity class names Roam's room loader constructs generically at this checkout.
+    """Entity class names Roam's room loader can construct at this checkout.
 
-    Read at run time from the checkout (never copied): the loader's constructor table
-    plus its living-entity registry. Used by the integration tests to check the catalog.
+    Discovered at run time from the checkout (never copied): the loader's constructor
+    table and living-entity registry, plus every class defined under ``src/entity``
+    that the loader's own ``_createEntity`` turns into an instance of that class (this
+    picks up its special cases, such as crops or NPCs). Used by the integration tests to
+    check the catalog without depending on what a sample world happens to contain.
     """
-    Map, NullRenderer, RoomJsonReaderWriter, _ = _import_roam(checkout)
+    _, NullRenderer, RoomJsonReaderWriter, _ = _import_roam(checkout)
     from entity.living.livingEntityRegistry import LIVING_ENTITY_TYPES
 
     writer = RoomJsonReaderWriter(GRID_SIZE, NullRenderer(), _TickCounter(), _Config(""))
-    return sorted(set(writer.entityConstructors) | set(LIVING_ENTITY_TYPES))
+    found = set(writer.entityConstructors) | set(LIVING_ENTITY_TYPES)
+
+    create = getattr(writer, "_createEntity", None)
+    if create is not None:
+        sample = {"tickCreated": 0, "tickPlanted": 0, "tickLastReproduced": 0, "energy": 1}
+        for name in sorted(_entity_class_names(checkout) - found):
+            try:
+                entity = create(name, dict(sample))
+            except Exception:  # noqa: BLE001 - a class the loader cannot build
+                continue
+            if entity is not None and type(entity).__name__ == name:
+                found.add(name)
+    return sorted(found)
+
+
+def _entity_class_names(checkout: str) -> set[str]:
+    """Names of the classes defined in the modules under ``<checkout>/src/entity``."""
+    src = os.path.join(checkout, "src")
+    names: set[str] = set()
+    for root, _dirs, files in os.walk(os.path.join(src, "entity")):
+        for file in sorted(files):
+            if not file.endswith(".py") or file == "__init__.py":
+                continue
+            rel = os.path.relpath(os.path.join(root, file[:-3]), src)
+            module_name = rel.replace(os.sep, ".")
+            try:
+                module = importlib.import_module(module_name)
+            except Exception:  # noqa: BLE001 - skip modules that do not import
+                continue
+            for name, obj in inspect.getmembers(module, inspect.isclass):
+                if obj.__module__ == module.__name__:
+                    names.add(name)
+    return names
 
 
 def main(argv: list[str] | None = None) -> int:

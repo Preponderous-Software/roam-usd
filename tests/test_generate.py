@@ -19,6 +19,7 @@ from roam_usd.generate import (
     check_checkout,
     driver_result,
     generate_seed,
+    interpreter_path,
     layer_data,
     list_roam_classes,
     read_generated,
@@ -100,6 +101,14 @@ FAKE_ROAM = {
             def __init__(self, gridSize, renderer, tickCounter, config):
                 self.entityConstructors = {"Grass": None, "CaveEntrance": None}
 
+            def _createEntity(self, entityClass, entityJson):
+                # a special case outside entityConstructors, like Roam's crops / NPCs
+                if entityClass == "Gravestone":
+                    from entity.gravestone import Gravestone
+
+                    return Gravestone(entityJson["tickCreated"])
+                return None
+
             def generateJsonForRoom(self, room):
                 locations = []
                 for key, loc in room.grid.locs.items():
@@ -126,6 +135,15 @@ FAKE_ROAM = {
                 room.grid.locs["1-1"].entities["home"] = Ent("WoodFloor")
         """,
     "src/entity/__init__.py": "",
+    "src/entity/gravestone.py": """
+        class Gravestone:
+            def __init__(self, tickCreated):
+                self.tickCreated = tickCreated
+
+
+        class Helper:
+            pass
+        """,
     "src/entity/living/__init__.py": "",
     "src/entity/living/livingEntityRegistry.py": "LIVING_ENTITY_TYPES = {'Bear': None}\n",
 }
@@ -241,7 +259,7 @@ def test_driver_never_writes_into_the_checkout(tmp_path, fake_roam):
 
 
 def test_list_classes(fake_roam):
-    assert list_roam_classes(fake_roam) == ["Bear", "CaveEntrance", "Grass"]
+    assert list_roam_classes(fake_roam) == ["Bear", "CaveEntrance", "Grass", "Gravestone"]
 
 
 def test_driver_failure_reports_stderr_and_hint(tmp_path, fake_roam):
@@ -372,6 +390,8 @@ def test_roam_generated_save_exports_cleanly(tmp_path, roam_checkout, roam_pytho
 @pytest.mark.roam
 def test_roam_classes_are_all_in_the_catalog(tmp_path, roam_checkout, roam_python):
     names = set(list_roam_classes(roam_checkout, roam_python))
+    # the loader's special cases are discovered without having to generate them
+    assert {"Npc", "Excrement", "YoungCrop", "MatureCrop", "Gravestone"} <= names
     save = run_driver(roam_checkout, 1, tmp_path / "save", radius=2, roam_python=roam_python)
     names |= set(read_save_dir(save).entity_counts())
     missing = catalog.missing_classes(names)
@@ -413,6 +433,39 @@ def test_noisy_roam_imports_do_not_break_the_driver(tmp_path, fake_roam):
     # A dependency that prints to stdout at import time, as pygame does.
     nr = fake_roam / "src/rendering/nullRenderer.py"
     nr.write_text("print('banner from a dependency')\n" + nr.read_text())
-    assert list_roam_classes(fake_roam) == ["Bear", "CaveEntrance", "Grass"]
+    assert list_roam_classes(fake_roam) == ["Bear", "CaveEntrance", "Grass", "Gravestone"]
     save = run_driver(fake_roam, 1, tmp_path / "s", radius=0)
     assert read_manifest(save)["seed"] == 1
+
+
+def test_list_classes_includes_loader_special_cases(fake_roam):
+    # Gravestone is in neither registry, appears in no generated world, and is only
+    # built by the loader's _createEntity; Helper is a class the loader cannot build.
+    names = list_roam_classes(fake_roam)
+    assert "Gravestone" in names and "Helper" not in names
+
+
+def test_relative_roam_python_is_resolved_from_the_caller(tmp_path, fake_roam, monkeypatch):
+    import sys
+
+    link = tmp_path / "bin" / "py"
+    link.parent.mkdir()
+    link.symlink_to(sys.executable)
+    monkeypatch.chdir(tmp_path)
+    assert interpreter_path("bin/py") == str(link)  # absolute, symlink kept
+    assert interpreter_path("python3") == "python3"  # bare name: PATH lookup
+    assert interpreter_path(None) == sys.executable
+    save = run_driver(fake_roam, 1, tmp_path / "s", radius=0, roam_python="bin/py")
+    assert read_manifest(save)["seed"] == 1
+
+
+@pytest.mark.parametrize("failure", ["bad-radius", "missing-interpreter"])
+def test_failed_rerun_keeps_the_previous_kept_save(tmp_path, fake_roam, failure):
+    out = tmp_path / "out"
+    generate_seed(fake_roam, 7, out, radius=0, keep_save=True)
+    kept = out / "seed_7_save" / "roam-usd-manifest.json"
+    before = kept.read_text()
+    kwargs = {"radius": -1} if failure == "bad-radius" else {"roam_python": "/no/such/python"}
+    with pytest.raises(GenerateError):
+        generate_seed(fake_roam, 7, out, keep_save=True, **kwargs)
+    assert kept.read_text() == before

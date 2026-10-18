@@ -24,6 +24,10 @@ import sys
 
 DRIVER_VERSION = 1
 
+#: Prefix of the one stdout line carrying the driver's JSON result. Roam's imports can
+#: print their own lines to stdout (e.g. pygame's banner), so the caller looks for this.
+RESULT_PREFIX = "ROAM_USD_DRIVER_RESULT "
+
 #: Roam's default room size (``gridSize: 17`` in Roam's config.yml at the pinned commit).
 GRID_SIZE = 17
 
@@ -219,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
 
     checkout = os.path.abspath(args.checkout)
     if args.list_classes:
-        print(json.dumps(list_classes(checkout)))
+        print(RESULT_PREFIX + json.dumps(list_classes(checkout)), flush=True)
         return 0
     if args.out is None or args.seed is None:
         parser.error("--out and --seed are required")
@@ -227,7 +231,7 @@ def main(argv: list[str] | None = None) -> int:
     manifest = generate(
         checkout, args.seed, args.radius, args.cave_depth, not args.no_home, args.out
     )
-    print(json.dumps({"rooms": len(manifest["generationOrder"])}))
+    print(RESULT_PREFIX + json.dumps({"rooms": len(manifest["generationOrder"])}), flush=True)
     return 0
 
 

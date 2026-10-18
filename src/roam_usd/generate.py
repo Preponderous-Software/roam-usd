@@ -19,6 +19,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from roam_usd._driver import RESULT_PREFIX
 from roam_usd.model import UNKNOWN_ROOM_TYPE, Level, World
 from roam_usd.save import SaveFormatError, read_save_dir
 from roam_usd.usd import ExportOptions, export_world, output_format
@@ -75,7 +76,7 @@ def run_driver(
     ]
     if not home:
         command.append("--no-home")
-    _run(command, checkout)
+    driver_result(_run(command, checkout).stdout)
     return save
 
 
@@ -84,13 +85,22 @@ def list_roam_classes(roam: str | Path, roam_python: str | None = None) -> list[
     checkout = check_checkout(roam)
     command = [roam_python or sys.executable, "-I", "-B", str(DRIVER), "--checkout"]
     result = _run([*command, str(checkout), "--list-classes"], checkout)
-    return json.loads(result.stdout)
+    return driver_result(result.stdout)
+
+
+def driver_result(stdout: str) -> Any:
+    """The driver's JSON result: the last stdout line with the result prefix. Anything
+    else on stdout (e.g. a banner printed by one of Roam's dependencies) is ignored."""
+    for line in reversed(stdout.splitlines()):
+        if line.startswith(RESULT_PREFIX):
+            return json.loads(line[len(RESULT_PREFIX) :])
+    raise GenerateError("Roam's generator gave no result:\n" + stdout[-2000:])
 
 
 def _run(command: list[str], checkout: Path) -> subprocess.CompletedProcess:
     env = dict(os.environ)
     # Keep Roam's structured logging quiet and off disk.
-    env.update({"LOG_LEVEL": "ERROR", "LOG_FILE": ""})
+    env.update({"LOG_LEVEL": "ERROR", "LOG_FILE": "", "PYGAME_HIDE_SUPPORT_PROMPT": "1"})
     try:
         result = subprocess.run(
             command, cwd=checkout, env=env, capture_output=True, text=True, check=False

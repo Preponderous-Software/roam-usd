@@ -17,6 +17,7 @@ from roam_usd.generate import (
     GenerateError,
     apply_manifest,
     check_checkout,
+    driver_result,
     generate_seed,
     layer_data,
     list_roam_classes,
@@ -399,3 +400,19 @@ def test_manifest_json_roundtrip(tmp_path, fake_roam):
     save = run_driver(fake_roam, 2, tmp_path / "s", radius=0)
     text = (save / "roam-usd-manifest.json").read_text()
     assert json.loads(text)["format"] == "roam-usd-manifest"
+
+
+def test_driver_result_ignores_other_stdout():
+    noisy = "pygame 2.6.1 (SDL 2.28.4)\nHello from the pygame community.\n"
+    assert driver_result(noisy + _driver.RESULT_PREFIX + '["Bear"]\n') == ["Bear"]
+    with pytest.raises(GenerateError, match="no result"):
+        driver_result(noisy)
+
+
+def test_noisy_roam_imports_do_not_break_the_driver(tmp_path, fake_roam):
+    # A dependency that prints to stdout at import time, as pygame does.
+    nr = fake_roam / "src/rendering/nullRenderer.py"
+    nr.write_text("print('banner from a dependency')\n" + nr.read_text())
+    assert list_roam_classes(fake_roam) == ["Bear", "CaveEntrance", "Grass"]
+    save = run_driver(fake_roam, 1, tmp_path / "s", radius=0)
+    assert read_manifest(save)["seed"] == 1

@@ -228,3 +228,27 @@ def test_info_command(basic_save, capsys):
 def test_info_command_malformed(malformed_save, capsys):
     assert main(["info", str(malformed_save)]) == 1
     assert "missing field 'grid'" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("bad", [42, "", "   ", ["forest"], {"type": "forest"}])
+def test_invalid_room_type_rejected(tmp_path, bad):
+    write_room(tmp_path, "room_0_0.json", minimal_room(roomType=bad))
+    with pytest.raises(SaveFormatError) as exc:
+        read_save_dir(tmp_path)
+    assert "room_0_0.json" in str(exc.value) and "'roomType'" in str(exc.value)
+
+
+def test_null_room_type_reads_as_unknown(tmp_path):
+    write_room(tmp_path, "room_0_0.json", minimal_room(roomType=None))
+    assert read_save_dir(tmp_path).find_room(0, 0, 0).room_type == "unknown"
+
+
+@pytest.mark.parametrize("name", ["rooms/room_0_0.json", "playerLocation.json", "tick.json"])
+def test_invalid_utf8_names_file(tmp_path, name, capsys):
+    write_room(tmp_path, "room_0_0.json", minimal_room())
+    (tmp_path / name).write_bytes(b'{"tick": "\xff\xfe"}')
+    with pytest.raises(SaveFormatError, match="UTF-8") as exc:
+        read_save_dir(tmp_path)
+    assert name.split("/")[-1] in str(exc.value)
+    assert main(["info", str(tmp_path)]) == 1
+    assert "UTF-8" in capsys.readouterr().err

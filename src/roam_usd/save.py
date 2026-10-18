@@ -67,7 +67,14 @@ def _as_tuple(kind: type | tuple[type, ...]) -> tuple[type, ...]:
     return kind if isinstance(kind, tuple) else (kind,)
 
 
-def _parse_json(text: str, where: str) -> Any:
+def _load_json(read: Callable[[], str], where: str) -> Any:
+    """Read and parse one save file, reporting any failure as a SaveFormatError on ``where``."""
+    try:
+        text = read()
+    except UnicodeDecodeError as exc:
+        raise SaveFormatError(f"{where}: not valid UTF-8 ({exc.reason})") from None
+    except OSError as exc:
+        raise SaveFormatError(f"{where}: cannot be read ({exc.strerror or exc})") from None
     try:
         return json.loads(text)
     except json.JSONDecodeError as exc:
@@ -84,9 +91,14 @@ def parse_room(data: Any, where: str, filename_coords: tuple[int, int, int] | No
     if not isinstance(z, int) or isinstance(z, bool):
         raise SaveFormatError(f"{where}: invalid field 'z': {z!r}")
     color = parse_background_color(_require(data, "backgroundColor", (str, list), where), where)
+    # An absent roomType (every save before roam#601) means "unknown". A null is read
+    # the same way, since Roam's in-memory Room.roomType defaults to None; any other
+    # non-string or empty value is malformed.
     room_type = data.get("roomType")
-    if not isinstance(room_type, str) or not room_type:
+    if room_type is None:
         room_type = UNKNOWN_ROOM_TYPE
+    elif not isinstance(room_type, str) or not room_type.strip():
+        raise SaveFormatError(f"{where}: invalid field 'roomType': {room_type!r}")
     name = data.get("name")
     name = name if isinstance(name, str) else f"({x}, {y})"
 
@@ -165,7 +177,7 @@ def build_world(
         fx, fy, fz = match.groups()
         filename_coords = (int(fx), int(fy), int(fz) if fz is not None else 0)
         where = f"{source}/rooms/{name}" if source else f"rooms/{name}"
-        room = parse_room(_parse_json(read(), where), where, filename_coords)
+        room = parse_room(_load_json(read, where), where, filename_coords)
         key = (room.x, room.y, room.z)
         if key in rooms:
             raise SaveFormatError(f"{where}: room {key} is also stored in {rooms[key].source_file}")
@@ -182,11 +194,11 @@ def build_world(
     player = None
     if player_text is not None:
         where = f"{source}/playerLocation.json"
-        player = parse_player_location(_parse_json(player_text(), where), where)
+        player = parse_player_location(_load_json(player_text, where), where)
     tick = None
     if tick_text is not None:
         where = f"{source}/tick.json"
-        tick = parse_tick(_parse_json(tick_text(), where), where)
+        tick = parse_tick(_load_json(tick_text, where), where)
     return World(levels=levels, player=player, tick=tick, source=source)
 
 

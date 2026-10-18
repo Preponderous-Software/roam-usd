@@ -1,0 +1,28 @@
+{
+  "backgroundColor": "(22, 18, 16)",
+  "x": 0,
+  "y": 0,
+  "z": -1,
+  "roomType": "cave",
+  "name": "(0, 0)",
+  "id": "fixture-room-0-0-n1",
+  "livingEntityIds": ["fixture-snake-1"],
+  "creationDate": "2026-10-17 12:00:00",
+  "grid": {
+    "id": "fixture-grid-0-0-n1",
+    "columns": 17,
+    "rows": 17,
+    "locations": [
+      {"id": "c-l-0-0", "x": 0, "y": 0, "entities": [{"id": "fixture-e-40", "entityClass": "Stone", "name": "Stone"}]},
+      {"id": "c-l-13-13", "x": 13, "y": 13, "entities": [
+        {"id": "fixture-e-41", "entityClass": "CaveFloor", "name": "Cave Floor"},
+        {"id": "fixture-e-42", "entityClass": "CaveLadder", "name": "Cave Ladder"}
+      ]},
+      {"id": "c-l-14-13", "x": 14, "y": 13, "entities": [
+        {"id": "fixture-e-43", "entityClass": "CaveFloor", "name": "Cave Floor"},
+        {"id": "fixture-snake-1", "entityClass": "Snake", "name": "Snake", "energy": 40, "tickCreated": 7, "tickLastReproduced": 0, "imagePath": "assets/images/snake.png"}
+      ]},
+      {"id": "c-l-15-13", "x": 15, "y": 13, "entities": [{"id": "fixture-e-44", "entityClass": "CoalOre", "name": "Coal Ore"}]}
+    ]
+  }
+}

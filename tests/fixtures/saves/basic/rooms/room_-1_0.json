@@ -1,0 +1,32 @@
+{
+  "backgroundColor": "(201, 131, 66)",
+  "x": -1,
+  "y": 0,
+  "name": "(-1, 0)",
+  "id": "fixture-room-n1-0",
+  "livingEntityIds": ["fixture-rabbit-1"],
+  "creationDate": "2026-10-17 12:00:00",
+  "grid": {
+    "id": "fixture-grid-n1-0",
+    "columns": 17,
+    "rows": 17,
+    "locations": [
+      {"id": "rn1-0-l-0-0", "x": 0, "y": 0, "entities": [
+        {"id": "fixture-e-20", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-21", "entityClass": "Glowshroom", "name": "Glowshroom"}
+      ]},
+      {"id": "rn1-0-l-4-2", "x": 4, "y": 2, "entities": [
+        {"id": "fixture-e-22", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-23", "entityClass": "Fence", "name": "Fence"}
+      ]},
+      {"id": "rn1-0-l-5-2", "x": 5, "y": 2, "entities": [
+        {"id": "fixture-e-24", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-25", "entityClass": "Torch", "name": "Torch"}
+      ]},
+      {"id": "rn1-0-l-16-1", "x": 16, "y": 1, "entities": [
+        {"id": "fixture-e-26", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-rabbit-1", "entityClass": "Rabbit", "name": "Rabbit", "energy": 50, "tickCreated": 20, "tickLastReproduced": 25, "imagePath": "assets/images/rabbit.png"}
+      ]}
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "backgroundColor": "(105, 104, 103)",
+  "x": 1,
+  "y": -1,
+  "z": 0,
+  "roomType": "mountain",
+  "name": "(1, -1)",
+  "id": "fixture-room-1-n1",
+  "livingEntityIds": [],
+  "creationDate": "2026-10-17 12:00:00",
+  "grid": {
+    "id": "fixture-grid-1-n1",
+    "columns": 5,
+    "rows": 5,
+    "locations": [
+      {"id": "r1-n1-l-0-0", "x": 0, "y": 0, "entities": [{"id": "fixture-e-30", "entityClass": "Stone", "name": "Stone"}]},
+      {"id": "r1-n1-l-1-0", "x": 1, "y": 0, "entities": [{"id": "fixture-e-31", "entityClass": "CoalOre", "name": "Coal Ore"}]},
+      {"id": "r1-n1-l-2-0", "x": 2, "y": 0, "entities": [{"id": "fixture-e-32", "entityClass": "IronOre", "name": "Iron Ore"}]},
+      {"id": "r1-n1-l-3-0", "x": 3, "y": 0, "entities": [{"id": "fixture-e-33", "entityClass": "GoldOre", "name": "Gold Ore"}]},
+      {"id": "r1-n1-l-4-4", "x": 4, "y": 4, "entities": [
+        {"id": "fixture-e-34", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-35", "entityClass": "Stone", "name": "Stone"}
+      ]}
+    ]
+  }
+}

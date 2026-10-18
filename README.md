@@ -68,7 +68,7 @@ Player | A marker prim at the saved position
 The full mapping is in [ARCHITECTURE.md](./ARCHITECTURE.md#roam--usd-mapping).
 
 ## Screenshots
-The images on this page were rendered headlessly in Blender 4.2 from roam-usd's output with [`scripts/blender_check.py`](./scripts/blender_check.py) (Cycles on the CPU).
+The images on this page were rendered headlessly in Blender from roam-usd's output: the first three in Blender 4.2 with [`scripts/blender_check.py`](./scripts/blender_check.py) (Cycles on the CPU), the seed atlas with [`scripts/seed_atlas.py`](./scripts/seed_atlas.py).
 
 The repository's hand-written test save (`tests/fixtures/saves/basic`): instanced tiles on the room grounds, a magenta fallback cube for an unknown entity class, a chest and crops, the blue player marker, creature sprite cards (textured here with plain-colour test sprites generated for this repository) and the cave level 4 units below the surface:
 
@@ -78,7 +78,16 @@ The repository's hand-written test save (`tests/fixtures/saves/basic`): instance
 
 ![Seeds 1 to 4 side by side in Blender](docs/images/seeds-1-4-index-blender.png)
 
-The generated-world images were rendered with `--flat` (display colours only), so no Roam artwork appears in this repository; with `--roam`, creature cards show Roam's sprites from your own clone.
+A seed atlas: sixteen worlds, `roam-usd generate --seeds 1..16 --radius 3 --cave-depth 0` (7×7 surface rooms each, with the starting home in the centre), seen from straight above in roam-usd's catalog colours. Each label gives the seed, the rooms, how many rooms of each biome the generator chose, and the entity count. Rendered in Blender 5.2 with [`scripts/seed_atlas.py`](./scripts/seed_atlas.py) (Cycles on the CPU), then reduced to 96 colours to keep the file small:
+
+![Sixteen generated Roam worlds, seeds 1 to 16, in a labelled 4 by 4 grid](docs/images/seed-atlas.png)
+
+```
+roam-usd generate --roam <roam-checkout> --seeds 1..16 --radius 3 --cave-depth 0 -o out/
+blender --background --python scripts/seed_atlas.py -- out/seed_{1..16}.usda --width 2000 -o atlas.png
+```
+
+The generated-world images show display colours only (`blender_check.py --flat`, and `seed_atlas.py` without `--textured`), so no Roam artwork appears in this repository; with `--roam`, creature cards show Roam's sprites from your own clone, and `seed_atlas.py --textured --roam <roam-checkout>` also textures the tiles with them — such posters fall under Roam's license and are for your own use.
 
 ## Checking the output in viewers
 - **Blender 4.1+** (File → Import → Universal Scene Description): imports levels, ground, point-instanced tiles, creature cards with their sprite textures, structures and the player. CI's `Blender import smoke (bpy 4.2)` job checks this on every push.

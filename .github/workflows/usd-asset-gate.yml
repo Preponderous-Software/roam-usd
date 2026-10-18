@@ -1,0 +1,69 @@
+# USD asset gate: OpenUSD's validators plus this repo's house rules
+# (.usd-asset-gate.yml) on the committed golden stage and on a sample of stages
+# roam-usd generates (fixture save, browser bundle, and real Roam worldgen).
+name: USD asset gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # usd-asset-gate has no release tag yet: a full commit SHA on its main branch
+  # ("Bring two ARCHITECTURE.md passages up to date with the shipped MVP", 2026-10-18).
+  USD_ASSET_GATE_SHA: e8b28531092a044ca6dbdf5b384e89f6ef03b516
+
+jobs:
+  committed-assets:
+    name: committed stages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write # the single PR comment, edited in place
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # reach the pull request's base commit
+      # Pull requests check the USD files they changed; pushes to main check them all.
+      - uses: Preponderous-Software/usd-asset-gate@e8b28531092a044ca6dbdf5b384e89f6ef03b516
+        with:
+          config: .usd-asset-gate.yml
+          usd-core-version: "26.8"
+
+  generated-assets:
+    name: generated stages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      # Roam is read, never vendored; keep in step with ROAM_SHA in ci.yml.
+      ROAM_SHA: a8d9ad6bc819d02195d047b103b96eb56d55063c
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clone Roam at the pinned commit
+        run: |
+          git init -q "$RUNNER_TEMP/roam"
+          git -C "$RUNNER_TEMP/roam" remote add origin https://github.com/Preponderous-Software/roam.git
+          git -C "$RUNNER_TEMP/roam" fetch -q --depth 1 origin "$ROAM_SHA"
+          git -C "$RUNNER_TEMP/roam" checkout -q FETCH_HEAD
+      - name: Install roam-usd, Roam's requirements and usd-asset-gate (pinned)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install . -r "$RUNNER_TEMP/roam/requirements.txt" \
+            "usd-asset-gate @ git+https://github.com/Preponderous-Software/usd-asset-gate@${USD_ASSET_GATE_SHA}"
+      - name: Export and generate sample stages
+        run: |
+          out="$RUNNER_TEMP/usd-out"
+          roam-usd export tests/fixtures/saves/basic --roam "$RUNNER_TEMP/roam" -o "$out/save/world.usda"
+          roam-usd export tests/fixtures/bundles/roam-saves-two-worlds.json --world caves --binary \
+            -o "$out/bundle/world.usdc"
+          roam-usd generate --roam "$RUNNER_TEMP/roam" --seeds 1..2 --radius 1 --cave-depth 1 \
+            -o "$out/generated"
+      - name: usd-asset-gate
+        run: usd-asset-gate check --format github --summary "$GITHUB_STEP_SUMMARY" "$RUNNER_TEMP/usd-out"

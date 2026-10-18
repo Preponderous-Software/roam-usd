@@ -1,6 +1,6 @@
 # MVP
 
-Status: **planning — not yet implemented.** See [CONCEPT.md](./CONCEPT.md) for why and [ARCHITECTURE.md](./ARCHITECTURE.md) for how.
+Status: **in development** — milestones land in order (M1 first). See [CONCEPT.md](./CONCEPT.md) for why and [ARCHITECTURE.md](./ARCHITECTURE.md) for how.
 
 ## The smallest end-to-end slice
 

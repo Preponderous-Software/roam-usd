@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planning — not yet implemented.** This document describes the intended design. Facts about Roam are cited at commit [`a8d9ad6`](https://github.com/Preponderous-Software/roam/tree/a8d9ad6bc819d02195d047b103b96eb56d55063c); `R/` below is shorthand for `https://github.com/Preponderous-Software/roam/blob/a8d9ad6bc819d02195d047b103b96eb56d55063c/`.
+Status: **in development** — milestones land in order (M1 first). This document describes the intended design. Facts about Roam are cited at commit [`a8d9ad6`](https://github.com/Preponderous-Software/roam/tree/a8d9ad6bc819d02195d047b103b96eb56d55063c); `R/` below is shorthand for `https://github.com/Preponderous-Software/roam/blob/a8d9ad6bc819d02195d047b103b96eb56d55063c/`.
 
 ## Overview
 

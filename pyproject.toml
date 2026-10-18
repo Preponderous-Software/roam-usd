@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "roam-usd"
+dynamic = ["version"]
+description = "Export worlds from the game Roam to OpenUSD stages."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Daniel McCoy Stephenson" }]
+requires-python = ">=3.10,<3.15"
+# The only runtime dependency. Roam is never a dependency of roam-usd
+# (see ARCHITECTURE.md § License boundary).
+dependencies = ["usd-core>=26.3,<27"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+roam-usd = "roam_usd.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Preponderous-Software/roam-usd"
+
+[tool.setuptools.dynamic]
+version = { attr = "roam_usd.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

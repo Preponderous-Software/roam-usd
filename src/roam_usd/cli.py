@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from pathlib import Path
 
 from roam_usd import __version__
 from roam_usd.save import SaveFormatError, format_info, read_save_dir
@@ -34,10 +35,14 @@ def _cmd_export(args: argparse.Namespace) -> int:
     out = args.output or _default_output(args.binary)
     try:
         output_format(out, args.binary)
+        if args.roam is not None and not Path(args.roam).is_dir():
+            raise ExportError(f"--roam {args.roam}: not a directory")
         world = read_save_dir(args.save)
-        path = export_world(
-            world, out, binary=args.binary, options=ExportOptions(levels=args.levels)
+        options = ExportOptions(
+            levels=args.levels,
+            roam_checkout=Path(args.roam).resolve() if args.roam else None,
         )
+        path = export_world(world, out, binary=args.binary, options=options)
     except (SaveFormatError, ExportError) as exc:
         print(f"roam-usd export: {exc}", file=sys.stderr)
         return 1
@@ -65,6 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("all", "surface"),
         default="all",
         help="export every level (default) or only the surface",
+    )
+    export.add_argument(
+        "--roam",
+        metavar="ROAM_CHECKOUT",
+        help="your Roam clone; creature sprite cards are textured from its PNGs",
     )
     export.set_defaults(func=_cmd_export)
 

@@ -15,16 +15,22 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from pxr import Gf, Sdf, Tf, Usd, UsdGeom, Vt
+from pxr import Gf, Sdf, Tf, Usd, UsdGeom, UsdShade, Vt
 
 from roam_usd import __version__, catalog
 from roam_usd.catalog import CatalogEntry
-from roam_usd.model import Room, World
+from roam_usd.model import EntityRecord, Room, World
 
 log = logging.getLogger(__name__)
 
 #: Vertical distance between levels: Cave_1 sits at Z = -4, Cave_2 at -8, ...
 LEVEL_SPACING = 4.0
+
+#: The player marker: a tall thin box, coloured to stand out from every catalog colour.
+PLAYER_MARKER = CatalogEntry("Player", "player", "marker", 0.4, 1.8, (0.10, 0.55, 1.00))
+
+#: Gap between a sprite card and what it stands on, and between cards on one tile.
+CARD_GAP = 0.01
 
 #: Instance ids are ``(tileY * columns + tileX) * stride + stackIndex``, where the stride is
 #: 16, or for a room with a taller stack the next power of two above its largest stack
@@ -44,6 +50,11 @@ class ExportOptions:
     levels: str = "all"
     #: Extra ``customLayerData`` entries (source, seed, Roam commit/version, ...).
     layer_data: Mapping[str, Any] = field(default_factory=dict)
+    #: The user's Roam checkout; creature sprites (``imagePath``) are resolved against it.
+    roam_checkout: Path | None = None
+    #: Write Roam's entity UUIDs as ``customData["roam:id"]``. Off for seeded worlds,
+    #: whose UUIDs are random and would make the stage non-reproducible.
+    include_ids: bool = True
 
 
 def prim_coord(value: int) -> str:
@@ -138,6 +149,9 @@ class StageWriter:
             raise ExportError(f"--levels must be 'all' or 'surface', not {self.options.levels!r}")
         self.stage = Usd.Stage.CreateInMemory()
         self._prototypes: dict[str, Sdf.Path] = {}
+        self._materials: dict[str, UsdShade.Material | None] = {}
+        self._material_names: set[str] = set()
+        self._warned_sprites: set[str] = set()
 
     # Public entry point
     def build(self) -> Usd.Stage:
@@ -157,6 +171,7 @@ class StageWriter:
             level_xform.GetPrim().SetCustomDataByKey("roam:z", level.z)
             for room in sorted(level.rooms, key=lambda r: (r.x, r.y)):
                 self._write_room(level_path, room)
+        self._write_player()
         return stage
 
     def _levels(self):
@@ -197,6 +212,7 @@ class StageWriter:
 
         self._write_ground(room_path, room)
         self._write_tiles(room_path, room)
+        self._write_individuals(room_path, room)
 
     def _write_ground(self, room_path: Sdf.Path, room: Room) -> None:
         w, h = float(room.columns), float(room.rows)
@@ -253,6 +269,203 @@ class StageWriter:
         extent = instancer.ComputeExtentAtTime(Usd.TimeCode.Default(), Usd.TimeCode.Default())
         if extent:
             instancer.CreateExtentAttr(extent)
+
+    # --- creatures, stateful structures, player (individual prims) ---
+
+    def _write_individuals(self, room_path: Sdf.Path, room: Room) -> None:
+        for tile in sorted(room.tiles, key=lambda t: (t.y, t.x)):
+            z = 0.0
+            cards = 0
+            for entity in tile.entities:
+                entry = catalog.lookup(entity.entity_class)
+                if entry.category == catalog.CREATURE:
+                    cards += 1
+                    self._write_creature(room_path, tile.x, tile.y, z + CARD_GAP * cards, entity)
+                elif entry.category == catalog.STATEFUL:
+                    self._write_structure(room_path, tile.x, tile.y, z, entity)
+                z += entry.stack_height
+
+    def _common_data(self, prim: Usd.Prim, entity: EntityRecord) -> None:
+        prim.SetCustomDataByKey("roam:entityClass", entity.entity_class)
+        if self.options.include_ids and entity.id is not None:
+            prim.SetCustomDataByKey("roam:id", entity.id)
+
+    def _write_creature(
+        self, room_path: Sdf.Path, tx: int, ty: int, z: float, entity: EntityRecord
+    ) -> None:
+        entry = catalog.lookup(entity.entity_class)
+        name = f"{prototype_name(entity.entity_class)}_{tx}_{ty}_{entity.stack_index}"
+        path = room_path.AppendChild("Creatures").AppendChild(name)
+        if not self.stage.GetPrimAtPath(path.GetParentPath()):
+            UsdGeom.Scope.Define(self.stage, path.GetParentPath())
+        h = entry.width / 2.0
+        points = [Gf.Vec3f(-h, -h, 0), Gf.Vec3f(h, -h, 0), Gf.Vec3f(h, h, 0), Gf.Vec3f(-h, h, 0)]
+        card = _define_mesh(self.stage, path, points, [(0, 1, 2, 3)], entry.color)
+        card.CreateDoubleSidedAttr(True)
+        st = UsdGeom.PrimvarsAPI(card).CreatePrimvar(
+            "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex
+        )
+        st.Set(Vt.Vec2fArray([Gf.Vec2f(0, 0), Gf.Vec2f(1, 0), Gf.Vec2f(1, 1), Gf.Vec2f(0, 1)]))
+        cx, cy = tile_center(tx, ty)
+        card.AddTranslateOp().Set(Gf.Vec3d(cx, cy, z))
+
+        prim = card.GetPrim()
+        self._common_data(prim, entity)
+        data = entity.data
+        for key in ("energy", "tickCreated", "tickLastReproduced", "imagePath", "npcMode"):
+            value = data.get(key)
+            if isinstance(value, (bool, int, float, str)):
+                prim.SetCustomDataByKey(f"roam:{key}", value)
+        if "npcInventory" in data:
+            prim.SetCustomDataByKey("roam:npcInventory", inventory_summary(data["npcInventory"]))
+
+        image = data.get("imagePath")
+        material = self._sprite_material(image) if isinstance(image, str) else None
+        if material is not None:
+            UsdShade.MaterialBindingAPI.Apply(prim).Bind(material)
+
+    def _sprite_material(self, image_path: str) -> UsdShade.Material | None:
+        """The sprite-card material for ``image_path``, or None (no checkout / missing file)."""
+        checkout = self.options.roam_checkout
+        if checkout is None:
+            return None
+        if image_path in self._materials:
+            return self._materials[image_path]
+        root = Path(checkout).resolve()
+        file = (root / image_path).resolve()
+        # imagePath comes from the save: only files inside the checkout (after resolving
+        # "..", absolute paths and symlinks) may become texture references.
+        problem = None
+        if not file.is_relative_to(root):
+            problem = "is outside"
+        elif not file.is_file():
+            problem = "not found in"
+        if problem is not None:
+            if image_path not in self._warned_sprites:
+                self._warned_sprites.add(image_path)
+                log.warning(
+                    "sprite %s %s %s; leaving those cards untextured",
+                    image_path,
+                    problem,
+                    checkout,
+                )
+            self._materials[image_path] = None
+            return None
+        self._materials[image_path] = material = self._define_sprite_material(image_path, file)
+        return material
+
+    def _define_sprite_material(self, image_path: str, file: Path) -> UsdShade.Material:
+        stage = self.stage
+        base = prototype_name("Sprite_" + Path(image_path).stem)
+        name = base
+        n = 1
+        while name in self._material_names:
+            n += 1
+            name = f"{base}_{n}"
+        self._material_names.add(name)
+        looks = Sdf.Path("/World/Looks")
+        if not stage.GetPrimAtPath(looks):
+            UsdGeom.Scope.Define(stage, looks)
+        mat_path = looks.AppendChild(name)
+        material = UsdShade.Material.Define(stage, mat_path)
+        material.GetPrim().SetCustomDataByKey("roam:imagePath", image_path)
+
+        reader = UsdShade.Shader.Define(stage, mat_path.AppendChild("StReader"))
+        reader.CreateIdAttr("UsdPrimvarReader_float2")
+        reader.CreateInput("varname", Sdf.ValueTypeNames.String).Set("st")
+        st_out = reader.CreateOutput("result", Sdf.ValueTypeNames.Float2)
+
+        texture = UsdShade.Shader.Define(stage, mat_path.AppendChild("Sprite"))
+        texture.CreateIdAttr("UsdUVTexture")
+        texture.CreateInput("file", Sdf.ValueTypeNames.Asset).Set(Sdf.AssetPath(file.as_posix()))
+        texture.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(st_out)
+        texture.CreateInput("wrapS", Sdf.ValueTypeNames.Token).Set("clamp")
+        texture.CreateInput("wrapT", Sdf.ValueTypeNames.Token).Set("clamp")
+        rgb = texture.CreateOutput("rgb", Sdf.ValueTypeNames.Float3)
+        alpha = texture.CreateOutput("a", Sdf.ValueTypeNames.Float)
+
+        surface = UsdShade.Shader.Define(stage, mat_path.AppendChild("Surface"))
+        surface.CreateIdAttr("UsdPreviewSurface")
+        surface.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(rgb)
+        surface.CreateInput("opacity", Sdf.ValueTypeNames.Float).ConnectToSource(alpha)
+        surface.CreateInput("opacityThreshold", Sdf.ValueTypeNames.Float).Set(0.5)
+        surface.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(1.0)
+        material.CreateSurfaceOutput().ConnectToSource(surface.ConnectableAPI(), "surface")
+        return material
+
+    def _write_structure(
+        self, room_path: Sdf.Path, tx: int, ty: int, z: float, entity: EntityRecord
+    ) -> None:
+        shared, _ = self._shared_prototype(entity.entity_class)
+        parent = room_path.AppendChild("Structures")
+        if not self.stage.GetPrimAtPath(parent):
+            UsdGeom.Scope.Define(self.stage, parent)
+        name = f"{prototype_name(entity.entity_class)}_{tx}_{ty}"
+        if self.stage.GetPrimAtPath(parent.AppendChild(name)):
+            name = f"{name}_{entity.stack_index}"
+        prim = self.stage.DefinePrim(parent.AppendChild(name))
+        prim.GetReferences().AddInternalReference(shared)
+        cx, cy = tile_center(tx, ty)
+        UsdGeom.Xformable(prim).AddTranslateOp().Set(Gf.Vec3d(cx, cy, z))
+        self._common_data(prim, entity)
+        data = entity.data
+        if "storedInventory" in data:
+            prim.SetCustomDataByKey(
+                "roam:storedInventory", inventory_summary(data["storedInventory"])
+            )
+        if isinstance(data.get("tickPlanted"), int):
+            prim.SetCustomDataByKey("roam:tickPlanted", data["tickPlanted"])
+
+    def _write_player(self) -> None:
+        player = self.world.player
+        if player is None:
+            return
+        where = f"player at room ({player.room_x}, {player.room_y}, {player.room_z})"
+        if self.options.levels == "surface" and player.room_z != 0:
+            log.warning("%s is below the surface; omitting the player marker", where)
+            return
+        room = self.world.find_room(player.room_x, player.room_y, player.room_z)
+        tile = room.tile_by_location_id(player.location_id) if room else None
+        if room is None or tile is None:
+            log.warning(
+                "%s: tile %r not found; omitting the player marker", where, player.location_id
+            )
+            return
+        z = sum(catalog.lookup(e.entity_class).stack_height for e in tile.entities)
+        cx, cy = tile_center(tile.x, tile.y)
+        position = Gf.Vec3d(
+            room.x * room.columns + cx,
+            -room.y * room.rows + cy,
+            room.z * LEVEL_SPACING + z,
+        )
+        xform = UsdGeom.Xform.Define(self.stage, "/World/Player")
+        xform.AddTranslateOp().Set(position)
+        prim = xform.GetPrim()
+        for key, value in (
+            ("roomX", player.room_x),
+            ("roomY", player.room_y),
+            ("roomZ", player.room_z),
+            ("tileX", tile.x),
+            ("tileY", tile.y),
+        ):
+            prim.SetCustomDataByKey(f"roam:{key}", value)
+        if self.options.include_ids:
+            prim.SetCustomDataByKey("roam:locationId", player.location_id)
+        define_box(self.stage, Sdf.Path("/World/Player/Marker"), PLAYER_MARKER)
+
+
+def inventory_summary(inventory: Any) -> dict[str, int]:
+    """Summarise a saved inventory (``{"inventorySlots": [{"slotContents": [...]}]}``) as
+    entity class → count, sorted by class name."""
+    counts: dict[str, int] = {}
+    slots = inventory.get("inventorySlots", []) if isinstance(inventory, dict) else []
+    for slot in slots if isinstance(slots, list) else []:
+        contents = slot.get("slotContents", []) if isinstance(slot, dict) else []
+        for item in contents if isinstance(contents, list) else []:
+            cls = item.get("entityClass") if isinstance(item, dict) else None
+            if isinstance(cls, str):
+                counts[cls] = counts.get(cls, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def build_stage(world: World, options: ExportOptions | None = None) -> Usd.Stage:

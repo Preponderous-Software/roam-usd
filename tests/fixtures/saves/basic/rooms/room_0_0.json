@@ -1,0 +1,80 @@
+{
+  "backgroundColor": "(204, 134, 64)",
+  "x": 0,
+  "y": 0,
+  "z": 0,
+  "roomType": "forest",
+  "name": "(0, 0)",
+  "id": "fixture-room-0-0",
+  "livingEntityIds": ["fixture-chicken-1", "fixture-bear-1", "fixture-npc-1"],
+  "creationDate": "2026-10-17 12:00:00",
+  "grid": {
+    "id": "fixture-grid-0-0",
+    "columns": 17,
+    "rows": 17,
+    "locations": [
+      {"id": "r0-0-l-0-0", "x": 0, "y": 0, "entities": [
+        {"id": "fixture-e-1", "entityClass": "Grass", "name": "Grass"}
+      ]},
+      {"id": "r0-0-l-1-0", "x": 1, "y": 0, "entities": [
+        {"id": "fixture-e-2", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-3", "entityClass": "Stone", "name": "Stone"}
+      ]},
+      {"id": "r0-0-l-2-3", "x": 2, "y": 3, "entities": [
+        {"id": "fixture-e-4", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-5", "entityClass": "OakWood", "name": "Oak Wood"}
+      ]},
+      {"id": "r0-0-l-3-3", "x": 3, "y": 3, "entities": [
+        {"id": "fixture-e-6", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-7", "entityClass": "Leaves", "name": "Leaves"},
+        {"id": "fixture-e-8", "entityClass": "Apple", "name": "Apple", "energy": 10}
+      ]},
+      {"id": "r0-0-l-5-5", "x": 5, "y": 5, "entities": [
+        {"id": "fixture-e-9", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-chicken-1", "entityClass": "Chicken", "name": "Chicken", "energy": 80, "tickCreated": 10, "tickLastReproduced": 12, "imagePath": "assets/images/chicken.png"}
+      ]},
+      {"id": "r0-0-l-6-5", "x": 6, "y": 5, "entities": [
+        {"id": "fixture-e-10", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-bear-1", "entityClass": "Bear", "name": "Bear", "energy": 95, "tickCreated": 3, "tickLastReproduced": 0, "imagePath": "assets/images/bear.png"}
+      ]},
+      {"id": "r0-0-l-8-8", "x": 8, "y": 8, "entities": [
+        {"id": "fixture-e-11", "entityClass": "WoodFloor", "name": "Wood Floor"},
+        {"id": "fixture-player", "entityClass": "Player", "name": "Player"}
+      ]},
+      {"id": "r0-0-l-9-9", "x": 9, "y": 9, "entities": [
+        {"id": "fixture-e-12", "entityClass": "WoodFloor", "name": "Wood Floor"},
+        {"id": "fixture-chest-1", "entityClass": "Chest", "name": "Chest", "storedInventory": {"inventorySlots": [
+          {"slotIndex": 0, "slotContents": [
+            {"entityId": "fixture-i-1", "entityClass": "Apple", "name": "Apple", "assetPath": "a.png", "energy": 10},
+            {"entityId": "fixture-i-2", "entityClass": "Apple", "name": "Apple", "assetPath": "a.png", "energy": 10}
+          ]},
+          {"slotIndex": 1, "slotContents": [
+            {"entityId": "fixture-i-3", "entityClass": "Banana", "name": "Banana", "assetPath": "b.png", "energy": 12}
+          ]},
+          {"slotIndex": 2, "slotContents": []}
+        ]}}
+      ]},
+      {"id": "r0-0-l-10-9", "x": 10, "y": 9, "entities": [
+        {"id": "fixture-e-13", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-crop-1", "entityClass": "YoungCrop", "name": "Young Crop", "tickPlanted": 900}
+      ]},
+      {"id": "r0-0-l-11-9", "x": 11, "y": 9, "entities": [
+        {"id": "fixture-e-14", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-crop-2", "entityClass": "MatureCrop", "name": "Mature Crop", "tickPlanted": 500}
+      ]},
+      {"id": "r0-0-l-12-12", "x": 12, "y": 12, "entities": [
+        {"id": "fixture-e-15", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-npc-1", "entityClass": "Npc", "name": "Wren", "energy": 70, "tickCreated": 1, "tickLastReproduced": 0, "imagePath": "assets/images/npc.png", "npcMode": "npc", "npcInventory": {"inventorySlots": [
+          {"slotIndex": 0, "slotContents": [
+            {"entityId": "fixture-i-4", "entityClass": "Wheat", "name": "Wheat", "assetPath": "w.png"}
+          ]}
+        ]}}
+      ]},
+      {"id": "r0-0-l-13-13", "x": 13, "y": 13, "entities": [
+        {"id": "fixture-e-16", "entityClass": "Grass", "name": "Grass"},
+        {"id": "fixture-e-17", "entityClass": "CaveEntrance", "name": "Cave Entrance"}
+      ]},
+      {"id": "r0-0-l-16-16", "x": 16, "y": 16, "entities": []}
+    ]
+  }
+}

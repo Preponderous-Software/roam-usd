@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from collections import Counter
@@ -15,6 +16,7 @@ from roam_usd.usd import (
     ExportOptions,
     build_stage,
     export_world,
+    id_stride,
     instance_id,
     prim_coord,
 )
@@ -276,3 +278,46 @@ def test_cli_export_errors(tmp_path, basic_save, malformed_save, capsys):
     assert "missing field 'grid'" in capsys.readouterr().err
     assert main(["export", str(basic_save), "--binary", "-o", str(tmp_path / "m.usda")]) == 1
     assert "--binary" in capsys.readouterr().err
+
+
+def test_tall_stacks_get_a_wider_id_stride(tmp_path):
+    rooms = tmp_path / "rooms"
+    rooms.mkdir()
+    tall = [{"entityClass": "Grass"} for _ in range(20)]
+    room = {
+        "backgroundColor": "(1, 2, 3)",
+        "x": 0,
+        "y": 0,
+        "grid": {
+            "columns": 2,
+            "rows": 1,
+            "locations": [
+                {"id": "a", "x": 0, "y": 0, "entities": tall},
+                {"id": "b", "x": 1, "y": 0, "entities": [{"entityClass": "Stone"}]},
+            ],
+        },
+    }
+    (rooms / "room_0_0.json").write_text(json.dumps(room))
+    stage = build_stage(read_save_dir(tmp_path))
+    inst = UsdGeom.PointInstancer(stage.GetPrimAtPath("/World/Surface/Room_0_0/Tiles"))
+    ids = list(inst.GetIdsAttr().Get())
+    assert len(ids) == len(set(ids)) == 21
+    assert inst.GetPrim().GetCustomDataByKey("roam:idStride") == 32
+    assert instance_id(1, 0, 2, 0, 32) in ids  # the Stone, not colliding with stack index 16
+
+
+def test_id_stride():
+    assert id_stride(0) == id_stride(15) == 16
+    assert id_stride(16) == id_stride(31) == 32
+    assert id_stride(100) == 128
+    with pytest.raises(ValueError):
+        instance_id(0, 0, 17, 16)
+
+
+def test_unwritable_destination_is_an_export_error(tmp_path, world, basic_save, capsys):
+    blocker = tmp_path / "file"
+    blocker.write_text("not a directory")
+    with pytest.raises(ExportError):
+        export_world(world, blocker / "sub" / "w.usda")
+    assert main(["export", str(basic_save), "-o", str(blocker / "w.usda")]) == 1
+    assert "roam-usd export:" in capsys.readouterr().err

@@ -26,7 +26,9 @@ log = logging.getLogger(__name__)
 #: Vertical distance between levels: Cave_1 sits at Z = -4, Cave_2 at -8, ...
 LEVEL_SPACING = 4.0
 
-#: Instance ids are ``(tileY * columns + tileX) * ID_STACK_STRIDE + stackIndex``.
+#: Instance ids are ``(tileY * columns + tileX) * stride + stackIndex``, where the stride is
+#: 16, or for a room with a taller stack the next power of two above its largest stack
+#: index, so ids never collide (see :func:`id_stride`).
 ID_STACK_STRIDE = 16
 
 FORMATS = {"usda": ".usda", "usdc": ".usdc"}
@@ -58,8 +60,20 @@ def tile_center(tx: int, ty: int) -> tuple[float, float]:
     return tx + 0.5, -(ty + 0.5)
 
 
-def instance_id(tx: int, ty: int, columns: int, stack_index: int) -> int:
-    return (ty * columns + tx) * ID_STACK_STRIDE + stack_index
+def id_stride(max_stack_index: int) -> int:
+    """16, or the smallest larger power of two that exceeds ``max_stack_index``."""
+    stride = ID_STACK_STRIDE
+    while stride <= max_stack_index:
+        stride *= 2
+    return stride
+
+
+def instance_id(
+    tx: int, ty: int, columns: int, stack_index: int, stride: int = ID_STACK_STRIDE
+) -> int:
+    if not 0 <= stack_index < stride:
+        raise ValueError(f"stack index {stack_index} does not fit id stride {stride}")
+    return (ty * columns + tx) * stride + stack_index
 
 
 def prototype_name(entity_class: str) -> str:
@@ -224,20 +238,15 @@ class StageWriter:
         instancer.CreatePrototypesRel().SetTargets(targets)
 
         index = {cls: i for i, cls in enumerate(classes)}
+        stride = id_stride(max(k for *_, k in instances))
+        if stride != ID_STACK_STRIDE:
+            instancer.GetPrim().SetCustomDataByKey("roam:idStride", stride)
         proto_indices, positions, ids = [], [], []
         for cls, tx, ty, z, k in instances:
             cx, cy = tile_center(tx, ty)
             proto_indices.append(index[cls])
             positions.append(Gf.Vec3f(cx, cy, z))
-            if k >= ID_STACK_STRIDE:
-                log.warning(
-                    "%s: tile (%d, %d) has more than %d stacked entities; instance ids may repeat",
-                    room.source_file,
-                    tx,
-                    ty,
-                    ID_STACK_STRIDE,
-                )
-            ids.append(instance_id(tx, ty, room.columns, k))
+            ids.append(instance_id(tx, ty, room.columns, k, stride))
         instancer.CreateProtoIndicesAttr(Vt.IntArray(proto_indices))
         instancer.CreatePositionsAttr(Vt.Vec3fArray(positions))
         instancer.CreateIdsAttr(Vt.Int64Array(ids))
@@ -268,8 +277,14 @@ def output_format(path: str | Path, binary: bool) -> str:
 def write_stage(stage: Usd.Stage, path: str | Path, binary: bool = False) -> Path:
     out = Path(path)
     fmt = output_format(out, binary)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    if not stage.GetRootLayer().Export(str(out), args={"format": fmt}):
+    try:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        ok = stage.GetRootLayer().Export(str(out), args={"format": fmt})
+    except OSError as exc:
+        raise ExportError(f"{out}: cannot write here ({exc.strerror or exc})") from None
+    except Tf.ErrorException as exc:
+        raise ExportError(f"{out}: could not write the stage ({exc})") from None
+    if not ok:
         raise ExportError(f"{out}: could not write the stage")
     return out
 

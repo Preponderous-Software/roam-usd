@@ -1,0 +1,18 @@
+{
+  "format": "roam-saves",
+  "version": 1,
+  "game": "roam",
+  "exported": "2026-10-17T12:00:00.000Z",
+  "files": {
+    "/saves/save_1/rooms/room_0_0.json": "{\"backgroundColor\": \"(200, 135, 65)\", \"x\": 0, \"y\": 0, \"z\": 0, \"name\": \"(0, 0)\", \"id\": \"bundle-room-0-0-0\", \"livingEntityIds\": [], \"creationDate\": \"2026-10-17 12:00:00\", \"grid\": {\"id\": \"bundle-grid-0-0-0\", \"columns\": 3, \"rows\": 3, \"locations\": [{\"id\": \"b-1-0-0\", \"x\": 0, \"y\": 0, \"entities\": [{\"id\": \"b-e-1-0-0-0\", \"entityClass\": \"Grass\", \"name\": \"Grass\"}]}, {\"id\": \"b-1-1-1\", \"x\": 1, \"y\": 1, \"entities\": [{\"id\": \"b-e-1-1-1-0\", \"entityClass\": \"Grass\", \"name\": \"Grass\"}, {\"id\": \"b-e-1-1-1-1\", \"entityClass\": \"Stone\", \"name\": \"Stone\"}]}, {\"id\": \"b-1-2-2\", \"x\": 2, \"y\": 2, \"entities\": [{\"id\": \"b-e-1-2-2-0\", \"entityClass\": \"WoodFloor\", \"name\": \"WoodFloor\"}]}]}, \"roomType\": \"grassland\"}",
+    "/saves/save_1/rooms/room_1_0.json": "{\"backgroundColor\": \"(205, 132, 68)\", \"x\": 1, \"y\": 0, \"z\": 0, \"name\": \"(1, 0)\", \"id\": \"bundle-room-1-0-0\", \"livingEntityIds\": [], \"creationDate\": \"2026-10-17 12:00:00\", \"grid\": {\"id\": \"bundle-grid-1-0-0\", \"columns\": 3, \"rows\": 3, \"locations\": [{\"id\": \"b-2-0-0\", \"x\": 0, \"y\": 0, \"entities\": [{\"id\": \"b-e-2-0-0-0\", \"entityClass\": \"Grass\", \"name\": \"Grass\"}, {\"id\": \"b-e-2-0-0-1\", \"entityClass\": \"OakWood\", \"name\": \"OakWood\"}]}, {\"id\": \"b-2-1-0\", \"x\": 1, \"y\": 0, \"entities\": [{\"id\": \"b-e-2-1-0-0\", \"entityClass\": \"Grass\", \"name\": \"Grass\"}, {\"id\": \"b-e-2-1-0-1\", \"entityClass\": \"Leaves\", \"name\": \"Leaves\"}]}]}}",
+    "/saves/save_1/playerLocation.json": "{\"roomX\": 0, \"roomY\": 0, \"roomZ\": 0, \"locationId\": \"b-1-2-2\"}",
+    "/saves/save_1/tick.json": "{\"tick\": 42}",
+    "/saves/save_1/stats.json": "{\"roomsExplored\": 2}",
+    "/saves/caves/rooms/room_0_0.json": "{\"backgroundColor\": \"(108, 104, 106)\", \"x\": 0, \"y\": 0, \"z\": 0, \"name\": \"(0, 0)\", \"id\": \"bundle-room-0-0-0\", \"livingEntityIds\": [], \"creationDate\": \"2026-10-17 12:00:00\", \"grid\": {\"id\": \"bundle-grid-0-0-0\", \"columns\": 3, \"rows\": 3, \"locations\": [{\"id\": \"b-3-1-1\", \"x\": 1, \"y\": 1, \"entities\": [{\"id\": \"b-e-3-1-1-0\", \"entityClass\": \"Stone\", \"name\": \"Stone\"}, {\"id\": \"b-e-3-1-1-1\", \"entityClass\": \"CaveEntrance\", \"name\": \"CaveEntrance\"}]}]}, \"roomType\": \"mountain\"}",
+    "/saves/caves/rooms/room_0_0_-1.json": "{\"backgroundColor\": \"(22, 18, 16)\", \"x\": 0, \"y\": 0, \"z\": -1, \"name\": \"(0, 0)\", \"id\": \"bundle-room-0-0--1\", \"livingEntityIds\": [], \"creationDate\": \"2026-10-17 12:00:00\", \"grid\": {\"id\": \"bundle-grid-0-0--1\", \"columns\": 3, \"rows\": 3, \"locations\": [{\"id\": \"b-4-1-1\", \"x\": 1, \"y\": 1, \"entities\": [{\"id\": \"b-e-4-1-1-0\", \"entityClass\": \"CaveFloor\", \"name\": \"CaveFloor\"}, {\"id\": \"b-e-4-1-1-1\", \"entityClass\": \"CaveLadder\", \"name\": \"CaveLadder\"}]}]}, \"roomType\": \"cave\"}",
+    "/saves/caves/roompngs/room_0_0.png": {
+      "base64": "aGFuZC13cml0dGVuIHBsYWNlaG9sZGVyLCBub3QgYW4gaW1hZ2U="
+    }
+  }
+}

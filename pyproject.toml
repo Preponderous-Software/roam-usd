@@ -39,10 +39,12 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Roam integration tests are opt-in: `pytest -m roam` with ROAM_USD_ROAM_CHECKOUT set.
-addopts = "-ra -m 'not roam'"
+# Opt-in suites: `pytest -m roam` (ROAM_USD_ROAM_CHECKOUT) and `pytest -m blender`
+# (ROAM_USD_BLENDER_PYTHON).
+addopts = "-ra -m 'not roam and not blender'"
 markers = [
     "roam: needs a Roam checkout (ROAM_USD_ROAM_CHECKOUT) and Roam's requirements",
+    "blender: needs an interpreter with Blender's bpy (ROAM_USD_BLENDER_PYTHON)",
 ]
 
 [tool.ruff]

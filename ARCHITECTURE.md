@@ -97,7 +97,7 @@ roam-usd generate --roam <roam-checkout> (--seed N | --seeds A..B) [--radius R] 
 roam-usd info <save-dir | bundle.json>      # rooms, levels, entity counts; no USD needed
 ```
 
-`generate --seeds A..B` writes one stage per seed plus `index.usda`, which references every seed's stage laid out on a grid (the "contact sheet").
+`generate --seeds A..B` writes one stage per seed plus `index.usda`, which references every seed's stage laid out on a grid (the "contact sheet"). Each seed is referenced (by a relative path, so the folder can be moved) under `/Index/Seed_<n>` with `customData["roam:seed"]`; the grid has ⌈√N⌉ columns, rows run towards −Y, and every cell is the size of the largest world's bounding box plus a margin (10 %, at least 4 units), so no two worlds overlap. Each seed gets its own driver process, so worlds share no state, and each per-seed stage is byte-identical to a `--seed <n>` run with the same flags.
 
 `--binary` writes `.usdc` instead of `.usda` (for `generate`, every per-seed stage and the index). `--roam` on `export` names the user's Roam checkout that creature sprites are read from (see the mapping below); `generate` already has one. Without it, `export` still needs nothing from Roam and creature cards are left untextured.
 

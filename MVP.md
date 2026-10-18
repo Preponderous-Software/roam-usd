@@ -20,22 +20,23 @@ The second writes `out/seed_1.usda` … `out/seed_9.usda` and `out/index.usda`, 
 - Reading Roam save directories: `rooms/room_<x>_<y>.json`, `rooms/room_<x>_<y>_<z>.json`, `playerLocation.json`, `tick.json`.
 - Reading browser save bundles (`roam-saves-<date>.json`) and selecting one world from them.
 - A hand-written entity catalog covering every entity class Roam's room loader knows at the pinned commit, plus a fallback for unknown classes.
-- Writing a USD stage: one `PointInstancer` per room for tiles, ground quads coloured by room background, individual prims for creatures, stateful structures and the player, cave levels stacked below the surface, metadata as `customData` / `customLayerData`.
+- Writing a USD stage (`.usda` by default, `.usdc` with `--binary`): one `PointInstancer` per room for tiles, ground quads coloured by room background, sprite cards for creatures (textured from the user's Roam checkout when one is given), individual prims for stateful structures and the player, cave levels stacked below the surface in the same stage (4 units per level), metadata as `customData` / `customLayerData`.
+- Room biome from a saved `roomType` field when present ([roam#601](https://github.com/Preponderous-Software/roam/issues/601)), `unknown` otherwise.
 - Seeded generation by driving Roam's own generator in a subprocess from a user-supplied Roam checkout, in a fixed order, with a manifest; batch seeds plus an `index.usda` contact sheet.
 - `roam-usd info` for a quick text summary without USD.
 - Tests (unit, golden, stage validity, Roam integration at a pinned commit) and CI.
 
 ## Out of scope (for the MVP)
 
-- Textures from Roam's PNGs (`--textures`) — designed in ARCHITECTURE.md, built after the MVP.
-- Biome inference for real saves (recorded as `unknown`).
+- Textures from Roam's PNGs for tile prototypes (`--textures`) — designed in ARCHITECTURE.md, built after the MVP. (Creature sprite cards are in scope.)
+- Inferring a biome from a room's contents: saves without a `roomType` field show the biome as `unknown`.
 - Player inventory, stats, goals, codex, achievements.
 - Live export from Roam's REST API.
 - USD → Roam import, or any write into a Roam save folder.
 - Animation / time samples (e.g. day-night cycle, creature movement).
-- `.usdz` packaging, materials beyond `displayColor`, LODs.
+- `.usdz` packaging, materials beyond `displayColor` (other than the creature sprite-card material), LODs.
 - Publishing to PyPI (installation is `pip install git+…` or from a clone until the format settles).
-- Any change to Roam itself.
+- Any change to Roam itself. (Two upstream proposals are filed as Roam issues; see [ARCHITECTURE.md § Decisions](./ARCHITECTURE.md#decisions).)
 
 ## Acceptance criteria
 
@@ -71,7 +72,7 @@ Package layout (`src/roam_usd/`), `pyproject.toml` with `usd-core>=26.3,<27`, th
 
 Tracked in [#2](https://github.com/Preponderous-Software/roam-usd/issues/2).
 
-`roam_usd.save` reads a save directory into plain dataclasses (`World`, `Level`, `Room`, `Tile`, `EntityRecord`, `PlayerMarker`), following the rules in [ARCHITECTURE.md § Save reader](./ARCHITECTURE.md#1-save-reader-roam_usdsave). Hand-written fixtures cover surface and cave rooms, missing `z`, negative coordinates, a non-17 grid, unknown classes, `Player` records and a malformed file. `roam-usd info` prints rooms per level and entity counts per class.
+`roam_usd.save` reads a save directory into plain dataclasses (`World`, `Level`, `Room`, `Tile`, `EntityRecord`, `PlayerMarker`), following the rules in [ARCHITECTURE.md § Save reader](./ARCHITECTURE.md#1-save-reader-roam_usdsave). Hand-written fixtures cover surface and cave rooms, missing `z`, rooms with and without `roomType`, negative coordinates, a non-17 grid, unknown classes, `Player` records and a malformed file. `roam-usd info` prints rooms per level and entity counts per class.
 
 ### M3 — Entity catalog
 
@@ -83,19 +84,19 @@ Tracked in [#3](https://github.com/Preponderous-Software/roam-usd/issues/3).
 
 Tracked in [#4](https://github.com/Preponderous-Software/roam-usd/issues/4).
 
-`roam_usd.usd` writes the stage hierarchy (`/World`, level prims, `Room_<x>_<y>`), ground quads coloured from `backgroundColor`, shared prototypes under `/World/Prototypes`, and one `PointInstancer` per room with `protoIndices`, `positions` and coordinate-derived `ids`; entity stacks rise in file order. Stage metadata (`upAxis`, `metersPerUnit`, `customLayerData`). Deterministic `.usda` output, golden tests, compliance check. `roam-usd export` works end to end for tiles.
+`roam_usd.usd` writes the stage hierarchy (`/World`, level prims, `Room_<x>_<y>`), ground quads coloured from `backgroundColor`, shared prototypes under `/World/Prototypes`, and one `PointInstancer` per room with `protoIndices`, `positions` and coordinate-derived `ids`; entity stacks rise in file order. Level prims stacked 4 units apart on Z in the same stage. Room prims carry `roam:roomType` from the room file when present, else `unknown`. Stage metadata (`upAxis`, `metersPerUnit`, `customLayerData`). Deterministic `.usda` output by default and `.usdc` with `--binary`, golden tests, compliance check. `roam-usd export` works end to end for tiles.
 
 ### M5 — Creatures, stateful structures and the player
 
 Tracked in [#5](https://github.com/Preponderous-Software/roam-usd/issues/5).
 
-Individual prims for creatures (`Bear`, `Chicken`, `Deer`, `Rabbit`, `Snake`, `Wolf`, `Npc`), stateful structures (`Chest`, `IronChest`, `YoungCrop`, `MatureCrop`) and the player marker (from `playerLocation.json`, honouring `roomZ`), with Roam fields carried as `customData["roam:*"]` and chest contents summarised by class and count.
+Sprite cards for creatures (`Bear`, `Chicken`, `Deer`, `Rabbit`, `Snake`, `Wolf`, `Npc`) — flat quads textured with the sprite named by each creature's `imagePath`, read from the user's Roam checkout (`--roam`) at export time and left untextured without one — individual prims for stateful structures (`Chest`, `IronChest`, `YoungCrop`, `MatureCrop`) and the player marker (from `playerLocation.json`, honouring `roomZ`), with Roam fields carried as `customData["roam:*"]` and chest contents summarised by class and count.
 
 ### M6 — Seeded generation driver
 
 Tracked in [#6](https://github.com/Preponderous-Software/roam-usd/issues/6).
 
-`roam-usd generate --roam <checkout> --seed N` runs `roam_usd/_driver.py` in a subprocess with the checkout as working directory: seeds `random`, generates rooms in a fixed spiral order within `--radius` using Roam's `Map` and `NullRenderer`, builds the starting home (unless `--no-home`), descends into caves under rooms with a `CaveEntrance` down to `--cave-depth`, writes rooms with Roam's `RoomJsonReaderWriter.generateJsonForRoom`, and writes `roam-usd-manifest.json`. The exporter reads the manifest for `roomType`, seed and Roam commit. CI integration job clones Roam at the pinned SHA and checks determinism.
+`roam-usd generate --roam <checkout> --seed N` runs `roam_usd/_driver.py` in a subprocess with the checkout as working directory: seeds `random`, generates rooms in a fixed spiral order within `--radius` using Roam's `Map` and `NullRenderer`, builds the starting home (unless `--no-home`), descends into caves under rooms with a `CaveEntrance` down to `--cave-depth`, writes rooms with Roam's `RoomJsonReaderWriter.generateJsonForRoom`, and writes `roam-usd-manifest.json`. The exporter reads the manifest for seed, Roam commit and, where the room files lack it, `roomType`. Once Roam has a per-world seed ([roam#600](https://github.com/Preponderous-Software/roam/issues/600)), the driver uses it instead of seeding `random`. CI integration job clones Roam at the pinned SHA and checks determinism.
 
 ### M7 — Batch seeds and contact sheet
 

@@ -48,9 +48,9 @@ That makes **"seed → world → USD" a real, headline feature**, with a stated 
 - **Not a renderer or a game client.** roam-usd writes files; it does not draw anything or let anyone play.
 - **No round trip.** USD → Roam save import is out of scope; roam-usd never writes into a Roam save folder.
 - **No live streaming.** Roam has an opt-in, read-only REST API "for external client tools (e.g. a world viewer)" ([`R/src/api/restApiServer.py`](https://github.com/Preponderous-Software/roam/blob/a8d9ad6bc819d02195d047b103b96eb56d55063c/src/api/restApiServer.py), `restEnabled` in `config.yml`). It returns room summaries and entity lists, not the full per-tile save data, and requires a running game. Live export from it is a possible later feature, not part of this design.
-- **No reproduction of in-game seeds.** Roam has none (see above). roam-usd does not patch Roam to add one.
+- **No reproduction of in-game seeds.** Roam has none (see above). roam-usd does not patch Roam to add one; a per-world seed has been proposed upstream as [roam#600](https://github.com/Preponderous-Software/roam/issues/600), and `generate` will use it once a Roam version provides it. Even then, a seed reproduces a world only given the same room generation order.
 - **No Roam code or art in this repository.** See the license boundary in [ARCHITECTURE.md](./ARCHITECTURE.md#license-boundary).
-- **No photorealism.** Prototypes are simple shapes with flat colours; textures from a local Roam checkout are an opt-in extra.
+- **No photorealism.** Prototypes are simple shapes with flat colours. Creatures are flat sprite cards textured with Roam's own sprites, read from the user's Roam checkout at export time; textures for the other tiles are a later opt-in extra.
 
 ## Prior art
 

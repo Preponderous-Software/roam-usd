@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -18,6 +20,8 @@ import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
+
+from pxr import Gf, Sdf, Usd, UsdGeom, Vt
 
 from roam_usd._driver import RESULT_PREFIX
 from roam_usd.model import UNKNOWN_ROOM_TYPE, Level, World
@@ -219,3 +223,123 @@ def generate_seed(
                 shutil.rmtree(kept)
             shutil.copytree(save_dir, kept)
         return stage
+
+
+# --- batches and the contact sheet (M7) -------------------------------------------------
+
+_RANGE = re.compile(r"^(-?\d+)\.\.(-?\d+)$")
+_SINGLE = re.compile(r"^-?\d+$")
+MAX_BATCH = 10_000
+
+
+def parse_seeds(text: str) -> list[int]:
+    """``"1..16"``, ``"1,5,9"`` or a mix (``"1..3,7"``) → seeds in order, without repeats."""
+    seeds: list[int] = []
+    for part in (p.strip() for p in text.split(",")):
+        if not part:
+            raise ValueError(f"empty seed in {text!r}")
+        match = _RANGE.match(part)
+        if match:
+            start, end = int(match.group(1)), int(match.group(2))
+            if end < start:
+                raise ValueError(f"seed range {part!r} runs backwards")
+            if end - start >= MAX_BATCH:
+                raise ValueError(f"seed range {part!r} is larger than {MAX_BATCH} seeds")
+            seeds.extend(range(start, end + 1))
+        elif _SINGLE.match(part):
+            seeds.append(int(part))
+        else:
+            raise ValueError(f"not a seed or seed range: {part!r} (use A..B or A,B,C)")
+    unique = list(dict.fromkeys(seeds))
+    if len(unique) > MAX_BATCH:
+        raise ValueError(f"more than {MAX_BATCH} seeds")
+    return unique
+
+
+def seed_prim_name(seed: int) -> str:
+    return f"Seed_n{-seed}" if seed < 0 else f"Seed_{seed}"
+
+
+def index_name(binary: bool = False) -> str:
+    return "index.usdc" if binary else "index.usda"
+
+
+def _world_range(path: Path) -> Gf.Range3d:
+    stage = Usd.Stage.Open(str(path))
+    cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), [UsdGeom.Tokens.default_])
+    return cache.ComputeWorldBound(stage.GetDefaultPrim()).ComputeAlignedRange()
+
+
+def write_index(stages: Mapping[int, Path], out_dir: str | Path, binary: bool = False) -> Path:
+    """Write ``index.usda``: every seed stage referenced under ``/Index/Seed_<n>``, laid out
+    in a square grid whose cells fit the largest world plus a margin, so none overlap."""
+    if not stages:
+        raise GenerateError("no seed stages to index")
+    out = Path(out_dir)
+    index_path = out / index_name(binary)
+    output_format(index_path, binary)
+
+    ranges = {seed: _world_range(path) for seed, path in stages.items()}
+    width = max(r.GetSize()[0] for r in ranges.values())
+    depth = max(r.GetSize()[1] for r in ranges.values())
+    margin = max(4.0, 0.1 * max(width, depth))
+    cell_x, cell_y = width + margin, depth + margin
+    columns = math.ceil(math.sqrt(len(stages)))
+
+    # Author on a layer anchored at the index's own path, so the relative references
+    # resolve while composing (an anonymous layer cannot anchor them).
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    layer = Sdf.Layer.Find(str(index_path))
+    if layer:
+        layer.Clear()
+    else:
+        layer = Sdf.Layer.CreateNew(str(index_path))
+    if not layer:
+        raise GenerateError(f"{index_path}: cannot create the index")
+    stage = Usd.Stage.Open(layer)
+    UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+    UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+    root = UsdGeom.Xform.Define(stage, "/Index").GetPrim()
+    stage.SetDefaultPrim(root)
+    stage.GetRootLayer().customLayerData = {
+        "roam:source": "seeds",
+        "roam:seeds": Vt.Int64Array(list(stages)),
+        "roam:cellSize": Gf.Vec2d(cell_x, cell_y),
+    }
+    for i, (seed, path) in enumerate(stages.items()):
+        row, column = divmod(i, columns)
+        lo = ranges[seed].GetMin()
+        # Put the world's bounding-box corner at its cell's corner (rows run towards -Y).
+        offset = Gf.Vec3d(column * cell_x - lo[0], -row * cell_y - (lo[1] + depth), 0.0)
+        xform = UsdGeom.Xform.Define(stage, root.GetPath().AppendChild(seed_prim_name(seed)))
+        xform.AddTranslateOp().Set(offset)
+        prim = xform.GetPrim()
+        prim.GetReferences().AddReference("./" + Path(path).name)
+        prim.SetCustomDataByKey("roam:seed", seed)
+    if not layer.Save(force=True):
+        raise GenerateError(f"{index_path}: could not write the index")
+    return index_path
+
+
+def generate_batch(
+    roam: str | Path,
+    seeds: list[int],
+    out_dir: str | Path,
+    radius: int = 2,
+    cave_depth: int = MAX_CAVE_DEPTH,
+    home: bool = True,
+    binary: bool = False,
+    roam_python: str | None = None,
+    keep_save: bool = False,
+    progress=None,
+) -> tuple[dict[int, Path], Path]:
+    """Generate one stage per seed (one driver process each, so worlds share no state),
+    then the ``index`` contact sheet. Returns ({seed: stage}, index path)."""
+    stages: dict[int, Path] = {}
+    for seed in seeds:
+        stages[seed] = generate_seed(
+            roam, seed, out_dir, radius, cave_depth, home, binary, roam_python, keep_save
+        )
+        if progress is not None:
+            progress(stages[seed])
+    return stages, write_index(stages, out_dir, binary)

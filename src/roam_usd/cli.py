@@ -8,7 +8,13 @@ import sys
 from pathlib import Path
 
 from roam_usd import __version__
-from roam_usd.generate import MAX_CAVE_DEPTH, GenerateError, generate_seed
+from roam_usd.generate import (
+    MAX_CAVE_DEPTH,
+    GenerateError,
+    generate_batch,
+    generate_seed,
+    parse_seeds,
+)
 from roam_usd.save import SaveFormatError, format_info, read_save_dir
 from roam_usd.usd import ExportError, ExportOptions, export_world, output_format
 
@@ -47,22 +53,33 @@ def _cmd_export(args: argparse.Namespace) -> int:
 
 
 def _cmd_generate(args: argparse.Namespace) -> int:
+    common = dict(
+        radius=args.radius,
+        cave_depth=args.cave_depth,
+        home=not args.no_home,
+        binary=args.binary,
+        roam_python=args.roam_python,
+        keep_save=args.keep_saves,
+    )
     try:
-        path = generate_seed(
-            args.roam,
-            args.seed,
-            args.output,
-            radius=args.radius,
-            cave_depth=args.cave_depth,
-            home=not args.no_home,
-            binary=args.binary,
-            roam_python=args.roam_python,
-            keep_save=args.keep_saves,
-        )
+        if args.seeds is not None:
+            try:
+                seeds = parse_seeds(args.seeds)
+            except ValueError as exc:
+                raise GenerateError(f"--seeds: {exc}") from None
+            _, index = generate_batch(
+                args.roam,
+                seeds,
+                args.output,
+                progress=lambda path: print(f"wrote {path}", flush=True),
+                **common,
+            )
+            print(f"wrote {index}")
+        else:
+            print(f"wrote {generate_seed(args.roam, args.seed, args.output, **common)}")
     except (GenerateError, SaveFormatError, ExportError) as exc:
         print(f"roam-usd generate: {exc}", file=sys.stderr)
         return 1
-    print(f"wrote {path}")
     return 0
 
 
@@ -100,7 +117,14 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument(
         "--roam", required=True, metavar="ROAM_CHECKOUT", help="your local clone of Roam"
     )
-    generate.add_argument("--seed", type=int, required=True, help="the world's seed")
+    which = generate.add_mutually_exclusive_group(required=True)
+    which.add_argument("--seed", type=int, help="generate one world from this seed")
+    which.add_argument(
+        "--seeds",
+        metavar="A..B|A,B,C",
+        help="generate one world per seed, plus index.usda showing them side by side; "
+        "write a list that starts with a negative seed with '=', e.g. --seeds=-2..1",
+    )
     generate.add_argument(
         "--radius", type=int, default=2, help="rooms within this distance of (0, 0) (default 2)"
     )

@@ -13,7 +13,7 @@ Document | Contents
 The MVP milestones are tracked as GitHub issues with the [`mvp`](https://github.com/Preponderous-Software/roam-usd/issues?q=label%3Amvp) label.
 
 ## Planned Usage
-These commands describe the MVP. Implemented so far: `info`, `export` (including `--roam` sprite cards) and `generate --seed`; `--seeds` batches and browser save bundles are not implemented yet. `generate` needs Roam's requirements in the interpreter that runs it (`pip install -r <roam>/requirements.txt`, or point `--roam-python` at one that has them).
+These commands describe the MVP. Implemented so far: `info`, `export` (including `--roam` sprite cards), `generate --seed` and `generate --seeds` with its `index.usda` contact sheet; browser save bundles are not implemented yet. `generate` needs Roam's requirements in the interpreter that runs it (`pip install -r <roam>/requirements.txt`, or point `--roam-python` at one that has them).
 
 Command | Effect
 ------ | ------

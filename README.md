@@ -8,7 +8,7 @@ Document | Contents
 ------------ | -------------
 [CONCEPT.md](./CONCEPT.md) | The problem, who it's for, how Roam generates its world, non-goals, prior art
 [MVP.md](./MVP.md) | The smallest end-to-end slice, scope, acceptance criteria, milestones
-[ARCHITECTURE.md](./ARCHITECTURE.md) | Components, data flow, Roam → USD mapping, license boundary, dependencies, testing, open questions
+[ARCHITECTURE.md](./ARCHITECTURE.md) | Components, data flow, Roam → USD mapping, license boundary, dependencies, testing, decisions, open questions
 
 The MVP milestones are tracked as GitHub issues with the [`mvp`](https://github.com/Preponderous-Software/roam-usd/issues?q=label%3Amvp) label.
 
@@ -17,7 +17,9 @@ These commands describe the MVP. None of them work yet.
 
 Command | Effect
 ------ | ------
-`roam-usd export <save-dir> -o world.usda` | Export a Roam save folder (e.g. `saves/defaultsavefile`) to a USD stage
+`roam-usd export <save-dir> -o world.usda` | Export a Roam save folder (e.g. `saves/defaultsavefile`) to a text `.usda` stage
+`roam-usd export <save-dir> --binary -o world.usdc` | The same, written as binary `.usdc`
+`roam-usd export <save-dir> --roam <roam-checkout> -o world.usda` | Also texture the creature sprite cards from your Roam clone
 `roam-usd export roam-saves-<date>.json --world save_1 -o world.usda` | Export one world from a browser save download (the **Saves** button in Roam's browser build)
 `roam-usd generate --roam <roam-checkout> --seed 7 --radius 3 -o out/` | Generate a 7×7-room world from seed 7 with Roam's own generator, then export it
 `roam-usd generate --roam <roam-checkout> --seeds 1..16 -o out/` | Generate and export 16 worlds, plus `out/index.usda` showing them side by side
@@ -26,10 +28,11 @@ Command | Effect
 ### What ends up in the scene
 Roam | USD
 ------------ | -------------
-Room | `Xform` at its place in the world, with a ground quad in the room's background colour
+Room | `Xform` at its place in the world, with a ground quad in the room's background colour and its biome (`roomType`) when the save records it, otherwise `unknown`
 Tiles (grass, stone, ore, trees, leaves, floors, fences, items, ...) | One `PointInstancer` per room, one prototype per entity class
-Creatures, NPCs, chests, crops | Individual prims carrying Roam's data (energy, ticks, contents) as `customData`
-Cave levels | Stacked beneath the surface at their depth
+Creatures, NPCs | Sprite cards — flat quads textured with Roam's own sprites, read from your Roam clone at export time — carrying Roam's data (energy, ticks) as `customData`
+Chests, crops | Individual prims carrying Roam's data (contents, ticks) as `customData`
+Cave levels | Stacked beneath the surface in the same stage, 4 units per level
 Player | A marker prim at the saved position
 
 The full mapping is in [ARCHITECTURE.md](./ARCHITECTURE.md#roam--usd-mapping).
@@ -39,6 +42,7 @@ roam-usd **reads** Roam; it does not contain it.
 
 - Exporting a save needs only the save files. No Roam code runs.
 - `generate` needs a local clone of Roam and runs Roam's world generator from it in a separate process. That use of Roam is governed by Roam's own license, the [Preponderous Non-Commercial License](https://github.com/Preponderous-Software/preponderous-nc-license/blob/main/LICENSE.md).
+- Creature sprites are read from your own Roam clone at export time when you pass `--roam` (and always by `generate`); they are not shipped with roam-usd.
 - No Roam source code, schemas, art or save files are copied into this repository. See [ARCHITECTURE.md § License boundary](./ARCHITECTURE.md#license-boundary).
 
 ## Requirements (planned)

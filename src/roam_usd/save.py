@@ -7,6 +7,8 @@ imports Roam.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import logging
 import re
@@ -253,3 +255,95 @@ def format_info(world: World) -> str:
             where += ", tile not found"
         lines.append(f"Player: {where}")
     return "\n".join(lines)
+
+
+# --- browser save bundles (M8) ------------------------------------------------------------
+
+BUNDLE_FORMAT = "roam-saves"
+BUNDLE_VERSION = 1
+_BUNDLE_ROOT = "/saves/"
+
+
+def _bundle_text(value: Any, where: str) -> str:
+    """A bundle file's content: JSON saves are strings, binary files ``{"base64": ...}``."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict) and isinstance(value.get("base64"), str):
+        try:
+            return base64.b64decode(value["base64"], validate=True).decode("utf-8")
+        except (binascii.Error, ValueError):
+            raise SaveFormatError(f"{where}: invalid base64 content") from None
+    raise SaveFormatError(f'{where}: content must be a string or {{"base64": ...}}')
+
+
+def read_bundle(path: str | Path) -> dict[str, dict[str, Any]]:
+    """Validate a browser save download and return ``{world: {relative path: content}}``."""
+    label = str(path)
+    data = _load_json(_reader(Path(path)), label)
+    if not isinstance(data, dict) or data.get("format") != BUNDLE_FORMAT:
+        raise SaveFormatError(f"{label}: not a Roam save bundle (format is not {BUNDLE_FORMAT!r})")
+    version = data.get("version")
+    if version != BUNDLE_VERSION:
+        raise SaveFormatError(
+            f"{label}: unsupported bundle version {version!r} (supported: {BUNDLE_VERSION})"
+        )
+    files = data.get("files")
+    if not isinstance(files, dict):
+        raise SaveFormatError(f"{label}: missing field 'files'")
+    worlds: dict[str, dict[str, Any]] = {}
+    for key, value in files.items():
+        if not isinstance(key, str) or not key.startswith(_BUNDLE_ROOT):
+            raise SaveFormatError(f"{label}: file path {key!r} is not under {_BUNDLE_ROOT}")
+        world, _, rel = key[len(_BUNDLE_ROOT) :].partition("/")
+        if not world or not rel:
+            raise SaveFormatError(f"{label}: file path {key!r} names no world file")
+        worlds.setdefault(world, {})[rel] = value
+    if not worlds:
+        raise SaveFormatError(f"{label}: the bundle holds no worlds")
+    return dict(sorted(worlds.items()))
+
+
+def bundle_world_names(path: str | Path) -> list[str]:
+    return list(read_bundle(path))
+
+
+def read_bundle_world(path: str | Path, world: str | None = None) -> World:
+    """Read one world from a bundle, in memory, through the same code path as a directory."""
+    label = str(path)
+    worlds = read_bundle(path)
+    names = ", ".join(worlds)
+    if world is None:
+        if len(worlds) > 1:
+            raise SaveFormatError(
+                f"{label}: holds {len(worlds)} worlds ({names}); choose one with --world"
+            )
+        world = next(iter(worlds))
+    elif world not in worlds:
+        raise SaveFormatError(f"{label}: no world {world!r} (worlds: {names})")
+    files = worlds[world]
+    source = f"{label}#{world}"
+
+    def entry(rel: str) -> Callable[[], str]:
+        return lambda: _bundle_text(files[rel], f"{source}/{rel}")
+
+    room_files = [
+        (rel[len("rooms/") :], entry(rel))
+        for rel in files
+        if rel.startswith("rooms/") and "/" not in rel[len("rooms/") :]
+    ]
+    if not room_files:
+        raise SaveFormatError(f"{source}: no rooms/ files in this world")
+    player = entry("playerLocation.json") if "playerLocation.json" in files else None
+    tick = entry("tick.json") if "tick.json" in files else None
+    return build_world(room_files, player, tick, source)
+
+
+def read_save(path: str | Path, world: str | None = None) -> World:
+    """A save folder, or (for a file) a browser save bundle with an optional ``world``."""
+    if Path(path).is_dir():
+        if world is not None:
+            raise SaveFormatError(f"{path}: --world only applies to a browser save bundle")
+        return read_save_dir(path)
+    if Path(path).is_file():
+        return read_bundle_world(path, world)
+    raise SaveFormatError(f"{path}: no such save folder or bundle file")

@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **in development** — milestones land in order (M1 first). This document describes the intended design. Facts about Roam are cited at commit [`a8d9ad6`](https://github.com/Preponderous-Software/roam/tree/a8d9ad6bc819d02195d047b103b96eb56d55063c); `R/` below is shorthand for `https://github.com/Preponderous-Software/roam/blob/a8d9ad6bc819d02195d047b103b96eb56d55063c/`.
+Status: **MVP implemented.** This document describes the design as built. Facts about Roam are cited at commit [`a8d9ad6`](https://github.com/Preponderous-Software/roam/tree/a8d9ad6bc819d02195d047b103b96eb56d55063c); `R/` below is shorthand for `https://github.com/Preponderous-Software/roam/blob/a8d9ad6bc819d02195d047b103b96eb56d55063c/`.
 
 ## Overview
 
@@ -92,9 +92,9 @@ Builds the stage with `pxr` (from `usd-core`). Writes text `.usda` by default (d
 ### 5. CLI (`roam_usd.cli`)
 
 ```
-roam-usd export <save-dir | bundle.json> [--world NAME] [-o world.usda] [--binary] [--levels all|surface] [--roam <roam-checkout>] [--textures]
+roam-usd export <save-dir | bundle.json> [--world NAME] [-o world.usda] [--binary] [--levels all|surface] [--roam <roam-checkout>] [--textures]   # --textures: post-MVP, not implemented yet
 roam-usd generate --roam <roam-checkout> (--seed N | --seeds A..B) [--radius R] [--cave-depth D] [--no-home] [--binary] [-o out/] [--roam-python PYTHON] [--keep-saves]
-roam-usd info <save-dir | bundle.json>      # rooms, levels, entity counts; no USD needed
+roam-usd info <save-dir | bundle.json> [--world NAME]   # rooms, levels, entity counts; lists a bundle's worlds; no USD needed
 ```
 
 `generate --seeds A..B` writes one stage per seed plus `index.usda`, which references every seed's stage laid out on a grid (the "contact sheet"). Each seed is referenced (by a relative path, so the folder can be moved) under `/Index/Seed_<n>` with `customData["roam:seed"]`; the grid has ⌈√N⌉ columns, rows run towards −Y, and every cell is the size of the largest world's bounding box plus a margin (10 %, at least 4 units), so no two worlds overlap. Each seed gets its own driver process, so worlds share no state, and each per-seed stage is byte-identical to a `--seed <n>` run with the same flags.
@@ -173,7 +173,7 @@ Viewers (not dependencies): `usdview` (ships with full OpenUSD builds, not with 
 - **Writer tests:** build a stage from a small `WorldModel`; assert prim paths, `PointInstancer` array lengths agree (`protoIndices`, `positions`, `ids`), instance counts per class equal entity counts per class, coordinates of known tiles, `customLayerData` keys. Golden `.usda` files under `tests/golden/` (byte comparison; regenerated deliberately with `pytest --update-golden`).
 - **Stage validity:** every produced stage opens with `Usd.Stage.Open` and passes every validator registered with `pxr.UsdValidation` (what `usdchecker` runs; `UsdUtils.ComplianceChecker` is not shipped in usd-core 26.x) with no errors (`roam_usd.validate`).
 - **Integration (CI job `Roam integration`, opt-in locally with `pytest -m roam` and `ROAM_USD_ROAM_CHECKOUT=<checkout>`, optionally `ROAM_USD_ROAM_PYTHON=<interpreter with Roam's requirements>`):** clone Roam at the pinned SHA into an ignored directory, install its requirements, run `generate --seed 1` twice and `--seed 2` once; assert seed 1 runs produce identical `.usda`, seed 2 differs, and the generated save directory reads back cleanly. A second job exports a world the driver made, to exercise the `export` path on genuine Roam output.
-- **Viewer smoke check:** headless Blender (`blender -b --python-expr "import bpy; bpy.ops.wm.usd_import(filepath=...)"`) where available; otherwise a documented manual check in `usdview` and Blender before each release.
+- **Viewer smoke check:** headless Blender through the `bpy` 4.2 wheel (Python 3.11): `scripts/blender_check.py` imports a stage with `bpy.ops.wm.usd_import` and reports levels, grounds, instancers, creature cards, structures, the player and loaded sprite images; `pytest -m blender` (CI job `Blender import smoke`) asserts on that report. `bpy` runs in its own process, never alongside usd-core's `pxr`. `usdview` is not in usd-core, so it stays a documented manual check before each release (README § Checking the output in viewers).
 
 ## Decisions
 

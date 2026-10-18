@@ -60,3 +60,23 @@ jobs:
         env:
           ROAM_USD_ROAM_CHECKOUT: ${{ runner.temp }}/roam
         run: python -m pytest -m roam -v -s
+
+  blender-smoke:
+    name: Blender import smoke (bpy 4.2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # Blender's bpy 4.2 wheel is built for Python 3.11.
+          python-version: "3.11"
+      - name: System libraries for headless bpy
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libxrender1 libxxf86vm1 libxfixes3 libxi6 libxkbcommon0 libsm6 libgl1 libegl1
+      - name: Install roam-usd and bpy
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" "bpy==4.2.0"
+      - name: Blender import smoke tests
+        run: ROAM_USD_BLENDER_PYTHON="$(command -v python)" python -m pytest -m blender -v

@@ -1,6 +1,6 @@
 # MVP
 
-Status: **in development** — milestones land in order (M1 first). See [CONCEPT.md](./CONCEPT.md) for why and [ARCHITECTURE.md](./ARCHITECTURE.md) for how.
+Status: **MVP implemented** — all eight milestones have landed. Acceptance criterion 9 is met for Blender (automated in CI, screenshots in the README); the `usdview` half is a manual pre-release check that has not been performed yet, because `usdview` is not part of `usd-core`. See [CONCEPT.md](./CONCEPT.md) for why and [ARCHITECTURE.md](./ARCHITECTURE.md) for how.
 
 ## The smallest end-to-end slice
 

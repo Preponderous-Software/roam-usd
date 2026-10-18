@@ -15,13 +15,38 @@ from roam_usd.generate import (
     generate_seed,
     parse_seeds,
 )
-from roam_usd.save import SaveFormatError, format_info, read_save_dir
+from roam_usd.save import (
+    SaveFormatError,
+    format_info,
+    read_bundle,
+    read_bundle_world,
+    read_save,
+)
 from roam_usd.usd import ExportError, ExportOptions, export_world, output_format
+
+SAVE_HELP = (
+    "a Roam save folder (e.g. saves/defaultsavefile) or a browser save bundle "
+    "(roam-saves-<date>.json)"
+)
+
+
+def _bundle_listing(path: str) -> str:
+    worlds = read_bundle(path)
+    lines = [f"Bundle: {path}", f"Worlds: {len(worlds)}"]
+    for name in worlds:
+        rooms = len(read_bundle_world(path, name).rooms())
+        lines.append(f"  {name}: {rooms} room{'s' if rooms != 1 else ''}")
+    if len(worlds) > 1:
+        lines.append("Choose one with --world NAME for details or to export it.")
+    return "\n".join(lines)
 
 
 def _cmd_info(args: argparse.Namespace) -> int:
     try:
-        world = read_save_dir(args.save)
+        if Path(args.save).is_file() and args.world is None:
+            print(_bundle_listing(args.save))
+            return 0
+        world = read_save(args.save, args.world)
     except SaveFormatError as exc:
         print(f"roam-usd info: {exc}", file=sys.stderr)
         return 1
@@ -39,7 +64,7 @@ def _cmd_export(args: argparse.Namespace) -> int:
         output_format(out, args.binary)
         if args.roam is not None and not Path(args.roam).is_dir():
             raise ExportError(f"--roam {args.roam}: not a directory")
-        world = read_save_dir(args.save)
+        world = read_save(args.save, args.world)
         options = ExportOptions(
             levels=args.levels,
             roam_checkout=Path(args.roam).resolve() if args.roam else None,
@@ -93,7 +118,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.required = True
 
     export = sub.add_parser("export", help="export a Roam save folder to a USD stage")
-    export.add_argument("save", help="a Roam save folder, e.g. saves/defaultsavefile")
+    export.add_argument("save", help=SAVE_HELP)
+    export.add_argument(
+        "--world", metavar="NAME", help="the world to read from a browser save bundle"
+    )
     export.add_argument(
         "-o", "--output", help="output stage (default: world.usda, or world.usdc with --binary)"
     )
@@ -155,7 +183,10 @@ def build_parser() -> argparse.ArgumentParser:
     generate.set_defaults(func=_cmd_generate)
 
     info = sub.add_parser("info", help="print rooms per level and entity counts per class")
-    info.add_argument("save", help="a Roam save folder, e.g. saves/defaultsavefile")
+    info.add_argument("save", help=SAVE_HELP)
+    info.add_argument(
+        "--world", metavar="NAME", help="the world to read from a browser save bundle"
+    )
     info.set_defaults(func=_cmd_info)
     return parser
 

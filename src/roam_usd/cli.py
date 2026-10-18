@@ -122,7 +122,8 @@ def build_parser() -> argparse.ArgumentParser:
     which.add_argument(
         "--seeds",
         metavar="A..B|A,B,C",
-        help="generate one world per seed, plus index.usda showing them side by side",
+        help="generate one world per seed, plus index.usda showing them side by side; "
+        "write a list that starts with a negative seed with '=', e.g. --seeds=-2..1",
     )
     generate.add_argument(
         "--radius", type=int, default=2, help="rooms within this distance of (0, 0) (default 2)"

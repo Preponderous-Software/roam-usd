@@ -303,7 +303,7 @@ def write_index(stages: Mapping[int, Path], out_dir: str | Path, binary: bool = 
     stage.SetDefaultPrim(root)
     stage.GetRootLayer().customLayerData = {
         "roam:source": "seeds",
-        "roam:seeds": Vt.IntArray(list(stages)),
+        "roam:seeds": Vt.Int64Array(list(stages)),
         "roam:cellSize": Gf.Vec2d(cell_x, cell_y),
     }
     for i, (seed, path) in enumerate(stages.items()):

@@ -138,3 +138,31 @@ def test_roam_batch_contact_sheet(tmp_path, roam_checkout, roam_python):
     check_batch(out, [1, 2, 3, 4])
     single = generate_seed(roam_checkout, 3, tmp_path / "single", radius=1, roam_python=roam_python)
     assert single.read_bytes() == (out / "seed_3.usda").read_bytes()
+
+
+def test_cli_negative_seeds_with_equals(tmp_path):
+    roam = write_fake_roam(tmp_path / "fake")
+    out = tmp_path / "out"
+    args = ["generate", "--roam", str(roam), "--seeds=-2..0,5", "--radius", "0", "-o", str(out)]
+    assert main(args) == 0
+    stage = Usd.Stage.Open(str(out / "index.usda"))
+    assert list(stage.GetRootLayer().customLayerData["roam:seeds"]) == [-2, -1, 0, 5]
+    assert stage.GetPrimAtPath("/Index/Seed_n2").GetCustomDataByKey("roam:seed") == -2
+    assert (out / "seed_-2.usda").is_file()
+
+
+def test_seeds_help_explains_negative_lists(capsys):
+    with pytest.raises(SystemExit):
+        main(["generate", "--help"])
+    assert "--seeds=-2..1" in capsys.readouterr().out
+
+
+def test_seeds_beyond_32_bits(tmp_path):
+    roam = write_fake_roam(tmp_path / "fake")
+    big = 2**31
+    stages, index = generate_batch(roam, [big, -big - 1], tmp_path / "out", radius=0)
+    stage = Usd.Stage.Open(str(index))
+    assert list(stage.GetRootLayer().customLayerData["roam:seeds"]) == [big, -big - 1]
+    assert stage.GetPrimAtPath(f"/Index/Seed_{big}").GetCustomDataByKey("roam:seed") == big
+    seeded = Usd.Stage.Open(str(stages[big]))
+    assert seeded.GetRootLayer().customLayerData["roam:seed"] == big

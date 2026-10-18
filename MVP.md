@@ -48,7 +48,7 @@ The MVP is done when all of these hold:
    - for every room, the number of instances of each prototype equals the number of entities of that class in the room file (excluding `Player` and the individually-modelled classes);
    - every creature, chest, crop and the player is an individual prim at its tile's coordinates;
    - a tile at room (rx, ry), tile (tx, ty) on a 17×17 grid is centred at X = 17·rx + tx + 0.5, Y = −(17·ry + ty + 0.5);
-   - `UsdUtils.ComplianceChecker` reports no errors.
+   - OpenUSD's validation framework (`pxr.UsdValidation`, the successor of `UsdUtils.ComplianceChecker`, which usd-core 26.x no longer ships) reports no errors.
 3. Exporting the same input twice produces byte-identical `.usda`.
 4. An unknown `entityClass` in a room file does not stop the export; it is rendered as the fallback prototype and reported once as a warning.
 5. A browser save bundle containing two worlds can be listed (`roam-usd info bundle.json`) and either world exported with `--world`.

@@ -13,7 +13,7 @@ Document | Contents
 The MVP milestones are tracked as GitHub issues with the [`mvp`](https://github.com/Preponderous-Software/roam-usd/issues?q=label%3Amvp) label.
 
 ## Planned Usage
-These commands describe the MVP. Implemented so far: `roam-usd info <save-dir>`; the others are not implemented yet.
+These commands describe the MVP. Implemented so far: `info` and `export` for save folders (tiles, ground, rooms and levels); the rest are not implemented yet.
 
 Command | Effect
 ------ | ------

@@ -41,7 +41,7 @@ def test_missing_subcommand_is_an_error(capsys):
     assert exc.value.code != 0
 
 
-@pytest.mark.parametrize("command", ["export", "generate"])
+@pytest.mark.parametrize("command", ["generate"])
 def test_stubs_exit_non_zero(command, capsys):
     assert main([command]) != 0
     assert "not yet implemented" in capsys.readouterr().err

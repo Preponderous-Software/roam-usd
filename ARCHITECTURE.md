@@ -107,7 +107,7 @@ Stage settings: `upAxis = "Z"`, `metersPerUnit = 1`, one tile = 1 × 1 unit, `de
 
 | Roam concept | Source in save | USD representation |
 | --- | --- | --- |
-| World / save | save directory or bundle world | `/World` (`Xform`); `customLayerData` holds `roam:source` (`save` or `seed`), save path or seed, Roam commit, Roam version, tick, roam-usd version |
+| World / save | save directory or bundle world | `/World` (`Xform`); `customLayerData` holds `roam:source` (`save` or `seed`), `roam:savePath` or `roam:seed`, `roam:commit`, `roam:version`, `roam:tick` and `roam-usd:version` (each only when known) |
 | Level (`z`) | room `z` (missing ⇒ 0) | `/World/Surface` for `z = 0`, `/World/Cave_1`, `/World/Cave_2`, … for `z = -1, -2, …`; translated by `z × levelSpacing` (4 units per level) on Z, so every cave level sits under the surface in the same stage |
 | Room (`x`, `y`) | `room_<x>_<y>[_<z>].json` | `/World/<Level>/Room_<x>_<y>` (`Xform`); negative coordinates written as `n<abs>` (e.g. `Room_n1_2`) because `-` is not valid in prim names; translated to `(x × columns, −y × rows, 0)` |
 | Room background | `backgroundColor` | `Room_…/Ground`: one quad `Mesh` covering the room, `primvars:displayColor` = background colour / 255 |
@@ -124,7 +124,7 @@ Stage settings: `upAxis = "Z"`, `metersPerUnit = 1`, one tile = 1 × 1 unit, `de
 | Entity stack on one tile | order of `entities[]` | Each entity sits on top of the previous one's height; order is preserved |
 | Unknown entity class | any unrecognised `entityClass` | Instance of a magenta fallback cube; `roam:entityClass` recorded |
 
-Per-room `PointInstancer` details: `prototypes` = only the classes present in that room (children of `Tiles/Prototypes`, each a referenced copy of a shared prototype in `/World/Prototypes`), `protoIndices`, `positions`, and `ids` = `tileY × columns + tileX` × 16 + stack index, which is stable and derived from coordinates, not UUIDs. Prim paths never contain Roam UUIDs; UUIDs are kept only as `customData["roam:id"]` on individual prims.
+Per-room `PointInstancer` details: `prototypes` = only the classes present in that room (children of `Tiles/Prototypes`, each a referenced copy of a shared prototype in `/World/Prototypes`, which is an abstract `class` prim so the shared copies are never drawn on their own), `protoIndices`, `positions`, and `ids` = `tileY × columns + tileX` × 16 + stack index (in the rare room with a tile stacked 16 or more entities high, the 16 becomes the next power of two above the tallest stack, recorded as `customData["roam:idStride"]` on the instancer, so ids never collide), which is stable and derived from coordinates, not UUIDs. Prim paths never contain Roam UUIDs; UUIDs are kept only as `customData["roam:id"]` on individual prims.
 
 **Creature sprite cards.** Each creature card gets a `UsdPreviewSurface` material whose `UsdUVTexture` reads the creature's sprite from the user's own Roam checkout at export time: the save's `imagePath` (e.g. `assets/images/bear.png`) resolved against the checkout given with `--roam`, written into the stage as an absolute path. Alpha from the PNG drives `opacity` so the card's transparent pixels are cut out. The sprite PNGs are never copied into this repository or its package. Without `--roam`, or when a sprite file is missing, the card keeps the catalog's flat `displayColor` and one warning is logged per missing path.
 
@@ -158,7 +158,7 @@ Chosen: **A, plus B confined to the seed driver** — the only place where runni
 | Dependency | Version | Why |
 | --- | --- | --- |
 | Python | ≥ 3.10, < 3.15 (CI: 3.10–3.13; Roam's own CI uses 3.12) | `usd-core` 26.8 declares `>=3.9,<3.15` |
-| [`usd-core`](https://pypi.org/project/usd-core/) | `>=26.3,<27` (26.8 current at time of writing, released 2026-07-20) | `pxr.Usd`, `UsdGeom`, `UsdShade`, `Sdf`, `UsdUtils.ComplianceChecker` |
+| [`usd-core`](https://pypi.org/project/usd-core/) | `>=26.3,<27` (26.8 current at time of writing, released 2026-07-20) | `pxr.Usd`, `UsdGeom`, `UsdShade`, `Sdf`, `UsdValidation` (stage checks; `UsdUtils.ComplianceChecker` is not shipped in usd-core 26.x) |
 | `pytest` | ≥ 8 (dev) | tests |
 | `ruff` | dev | lint/format |
 | Roam checkout (optional, `generate` only) | any commit; integration tests pin `a8d9ad6bc819d02195d047b103b96eb56d55063c` | real world generator |
@@ -171,7 +171,7 @@ Viewers (not dependencies): `usdview` (ships with full OpenUSD builds, not with 
 - **Reader unit tests** against hand-written fixtures: surface + cave rooms, missing `z`, a room with `roomType` and one without (→ `unknown`), negative coordinates, unknown entity class, `Player` record skipped, non-17 grid size, malformed file → clear error naming the file.
 - **Catalog tests:** every class Roam's loader knows at the pinned commit has an entry (the list is checked by the integration job, not copied into unit tests); unknown → fallback.
 - **Writer tests:** build a stage from a small `WorldModel`; assert prim paths, `PointInstancer` array lengths agree (`protoIndices`, `positions`, `ids`), instance counts per class equal entity counts per class, coordinates of known tiles, `customLayerData` keys. Golden `.usda` files under `tests/golden/` (byte comparison; regenerated deliberately with `pytest --update-golden`).
-- **Stage validity:** every produced stage opens with `Usd.Stage.Open` and passes `UsdUtils.ComplianceChecker` with no errors.
+- **Stage validity:** every produced stage opens with `Usd.Stage.Open` and passes every validator registered with `pxr.UsdValidation` (what `usdchecker` runs; `UsdUtils.ComplianceChecker` is not shipped in usd-core 26.x) with no errors (`roam_usd.validate`).
 - **Integration (CI job, opt-in locally with `-m roam`):** clone Roam at the pinned SHA into an ignored directory, install its requirements, run `generate --seed 1` twice and `--seed 2` once; assert seed 1 runs produce identical `.usda`, seed 2 differs, and the generated save directory reads back cleanly. A second job exports a world the driver made, to exercise the `export` path on genuine Roam output.
 - **Viewer smoke check:** headless Blender (`blender -b --python-expr "import bpy; bpy.ops.wm.usd_import(filepath=...)"`) where available; otherwise a documented manual check in `usdview` and Blender before each release.
 

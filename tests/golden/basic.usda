@@ -1,0 +1,675 @@
+#usda 1.0
+(
+    customLayerData = {
+        string "roam-usd:version" = "0.1.0.dev0"
+        string "roam:savePath" = "fixtures/saves/basic"
+        string "roam:source" = "save"
+        int "roam:tick" = 1200
+    }
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    class "Prototypes"
+    {
+        def Mesh "Fence" (
+            customData = {
+                dictionary roam = {
+                    string category = "structure"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.1, -0.1, 0), (0.1, 0.1, 0.8)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.1, -0.1, 0), (0.1, -0.1, 0), (0.1, 0.1, 0), (-0.1, 0.1, 0), (-0.1, -0.1, 0.8), (0.1, -0.1, 0.8), (0.1, 0.1, 0.8), (-0.1, 0.1, 0.8)]
+            color3f[] primvars:displayColor = [(0.55, 0.4, 0.22)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "Fallback" (
+            customData = {
+                dictionary roam = {
+                    string category = "unknown"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.4, -0.4, 0), (0.4, 0.4, 0.8)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.4, -0.4, 0), (0.4, -0.4, 0), (0.4, 0.4, 0), (-0.4, 0.4, 0), (-0.4, -0.4, 0.8), (0.4, -0.4, 0.8), (0.4, 0.4, 0.8), (-0.4, 0.4, 0.8)]
+            color3f[] primvars:displayColor = [(1, 0, 1)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "Grass" (
+            customData = {
+                dictionary roam = {
+                    string category = "ground"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0.1)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0), (-0.5, -0.5, 0.1), (0.5, -0.5, 0.1), (0.5, 0.5, 0.1), (-0.5, 0.5, 0.1)]
+            color3f[] primvars:displayColor = [(0.3, 0.62, 0.25)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "Torch" (
+            customData = {
+                dictionary roam = {
+                    string category = "structure"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.06, -0.06, 0), (0.06, 0.06, 0.7)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.06, -0.06, 0), (0.06, -0.06, 0), (0.06, 0.06, 0), (-0.06, 0.06, 0), (-0.06, -0.06, 0.7), (0.06, -0.06, 0.7), (0.06, 0.06, 0.7), (-0.06, 0.06, 0.7)]
+            color3f[] primvars:displayColor = [(0.96, 0.7, 0.2)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "Apple" (
+            customData = {
+                dictionary roam = {
+                    string category = "item"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.15, -0.15, 0), (0.15, 0.15, 0.3)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.15, -0.15, 0), (0.15, -0.15, 0), (0.15, 0.15, 0), (-0.15, 0.15, 0), (-0.15, -0.15, 0.3), (0.15, -0.15, 0.3), (0.15, 0.15, 0.3), (-0.15, 0.15, 0.3)]
+            color3f[] primvars:displayColor = [(0.85, 0.12, 0.12)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "CaveEntrance" (
+            customData = {
+                dictionary roam = {
+                    string category = "structure"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.4, -0.4, 0), (0.4, 0.4, 0.05)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.4, -0.4, 0), (0.4, -0.4, 0), (0.4, 0.4, 0), (-0.4, 0.4, 0), (-0.4, -0.4, 0.05), (0.4, -0.4, 0.05), (0.4, 0.4, 0.05), (-0.4, 0.4, 0.05)]
+            color3f[] primvars:displayColor = [(0.04, 0.04, 0.05)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "Leaves" (
+            customData = {
+                dictionary roam = {
+                    string category = "flora"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 1.1), (0.5, 0.5, 1.5)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 1.1), (0.5, -0.5, 1.1), (0.5, 0.5, 1.1), (-0.5, 0.5, 1.1), (-0.5, -0.5, 1.5), (0.5, -0.5, 1.5), (0.5, 0.5, 1.5), (-0.5, 0.5, 1.5)]
+            color3f[] primvars:displayColor = [(0.18, 0.48, 0.16)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "OakWood" (
+            customData = {
+                dictionary roam = {
+                    string category = "flora"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 1.5)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0), (-0.2, -0.2, 1.5), (0.2, -0.2, 1.5), (0.2, 0.2, 1.5), (-0.2, 0.2, 1.5)]
+            color3f[] primvars:displayColor = [(0.45, 0.3, 0.16)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "Stone" (
+            customData = {
+                dictionary roam = {
+                    string category = "solid"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 1)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0), (-0.5, -0.5, 1), (0.5, -0.5, 1), (0.5, 0.5, 1), (-0.5, 0.5, 1)]
+            color3f[] primvars:displayColor = [(0.5, 0.5, 0.52)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "WoodFloor" (
+            customData = {
+                dictionary roam = {
+                    string category = "ground"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0.1)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0), (-0.5, -0.5, 0.1), (0.5, -0.5, 0.1), (0.5, 0.5, 0.1), (-0.5, 0.5, 0.1)]
+            color3f[] primvars:displayColor = [(0.62, 0.45, 0.27)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "CoalOre" (
+            customData = {
+                dictionary roam = {
+                    string category = "solid"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 1)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0), (-0.5, -0.5, 1), (0.5, -0.5, 1), (0.5, 0.5, 1), (-0.5, 0.5, 1)]
+            color3f[] primvars:displayColor = [(0.2, 0.2, 0.22)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "GoldOre" (
+            customData = {
+                dictionary roam = {
+                    string category = "solid"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 1)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0), (-0.5, -0.5, 1), (0.5, -0.5, 1), (0.5, 0.5, 1), (-0.5, 0.5, 1)]
+            color3f[] primvars:displayColor = [(0.9, 0.74, 0.18)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "IronOre" (
+            customData = {
+                dictionary roam = {
+                    string category = "solid"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 1)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0), (-0.5, -0.5, 1), (0.5, -0.5, 1), (0.5, 0.5, 1), (-0.5, 0.5, 1)]
+            color3f[] primvars:displayColor = [(0.72, 0.55, 0.45)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "CaveFloor" (
+            customData = {
+                dictionary roam = {
+                    string category = "ground"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0.1)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0), (-0.5, -0.5, 0.1), (0.5, -0.5, 0.1), (0.5, 0.5, 0.1), (-0.5, 0.5, 0.1)]
+            color3f[] primvars:displayColor = [(0.33, 0.3, 0.28)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "CaveLadder" (
+            customData = {
+                dictionary roam = {
+                    string category = "structure"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.3, -0.3, 0), (0.3, 0.3, 1.2)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.3, -0.3, 0), (0.3, -0.3, 0), (0.3, 0.3, 0), (-0.3, 0.3, 0), (-0.3, -0.3, 1.2), (0.3, -0.3, 1.2), (0.3, 0.3, 1.2), (-0.3, 0.3, 1.2)]
+            color3f[] primvars:displayColor = [(0.55, 0.38, 0.2)]
+            uniform token subdivisionScheme = "none"
+        }
+    }
+
+    def Xform "Surface" (
+        customData = {
+            dictionary roam = {
+                int z = 0
+            }
+        }
+    )
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Xform "Room_n1_0" (
+            customData = {
+                dictionary roam = {
+                    string roomType = "unknown"
+                    int x = -1
+                    int y = 0
+                    int z = 0
+                }
+            }
+        )
+        {
+            double3 xformOp:translate = (-17, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Mesh "Ground"
+            {
+                float3[] extent = [(0, -17, 0), (17, 0, 0)]
+                int[] faceVertexCounts = [4]
+                int[] faceVertexIndices = [0, 1, 2, 3]
+                point3f[] points = [(0, -17, 0), (17, -17, 0), (17, 0, 0), (0, 0, 0)]
+                color3f[] primvars:displayColor = [(0.7882353, 0.5137255, 0.25882354)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def PointInstancer "Tiles"
+            {
+                float3[] extent = [(0, -3, 0), (17, 0, 0.90000004)]
+                int64[] ids = [0, 1, 528, 608, 609, 624, 625]
+                point3f[] positions = [(0.5, -0.5, 0), (0.5, -0.5, 0.1), (16.5, -1.5, 0), (4.5, -2.5, 0), (4.5, -2.5, 0.1), (5.5, -2.5, 0), (5.5, -2.5, 0.1)]
+                int[] protoIndices = [2, 1, 2, 2, 0, 2, 3]
+                rel prototypes = [
+                    </World/Surface/Room_n1_0/Tiles/Prototypes/Fence>,
+                    </World/Surface/Room_n1_0/Tiles/Prototypes/Glowshroom>,
+                    </World/Surface/Room_n1_0/Tiles/Prototypes/Grass>,
+                    </World/Surface/Room_n1_0/Tiles/Prototypes/Torch>,
+                ]
+
+                def Scope "Prototypes"
+                {
+                    def "Fence" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Fence"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Fence>
+                    )
+                    {
+                    }
+
+                    def "Glowshroom" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Glowshroom"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Fallback>
+                    )
+                    {
+                    }
+
+                    def "Grass" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Grass"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Grass>
+                    )
+                    {
+                    }
+
+                    def "Torch" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Torch"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Torch>
+                    )
+                    {
+                    }
+                }
+            }
+        }
+
+        def Xform "Room_0_0" (
+            customData = {
+                dictionary roam = {
+                    string roomType = "forest"
+                    int x = 0
+                    int y = 0
+                    int z = 0
+                }
+            }
+        )
+        {
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Mesh "Ground"
+            {
+                float3[] extent = [(0, -17, 0), (17, 0, 0)]
+                int[] faceVertexCounts = [4]
+                int[] faceVertexIndices = [0, 1, 2, 3]
+                point3f[] points = [(0, -17, 0), (17, -17, 0), (17, 0, 0), (0, 0, 0)]
+                color3f[] primvars:displayColor = [(0.8, 0.5254902, 0.2509804)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def PointInstancer "Tiles"
+            {
+                float3[] extent = [(0, -14, 0), (14, 0, 1.9000001)]
+                int64[] ids = [0, 16, 17, 848, 849, 864, 865, 866, 1440, 1456, 2304, 2592, 2608, 2624, 3456, 3744, 3745]
+                point3f[] positions = [(0.5, -0.5, 0), (1.5, -0.5, 0), (1.5, -0.5, 0.1), (2.5, -3.5, 0), (2.5, -3.5, 0.1), (3.5, -3.5, 0), (3.5, -3.5, 0.1), (3.5, -3.5, 1.6), (5.5, -5.5, 0), (6.5, -5.5, 0), (8.5, -8.5, 0), (9.5, -9.5, 0), (10.5, -9.5, 0), (11.5, -9.5, 0), (12.5, -12.5, 0), (13.5, -13.5, 0), (13.5, -13.5, 0.1)]
+                int[] protoIndices = [2, 2, 5, 2, 4, 2, 3, 0, 2, 2, 6, 6, 2, 2, 2, 2, 1]
+                rel prototypes = [
+                    </World/Surface/Room_0_0/Tiles/Prototypes/Apple>,
+                    </World/Surface/Room_0_0/Tiles/Prototypes/CaveEntrance>,
+                    </World/Surface/Room_0_0/Tiles/Prototypes/Grass>,
+                    </World/Surface/Room_0_0/Tiles/Prototypes/Leaves>,
+                    </World/Surface/Room_0_0/Tiles/Prototypes/OakWood>,
+                    </World/Surface/Room_0_0/Tiles/Prototypes/Stone>,
+                    </World/Surface/Room_0_0/Tiles/Prototypes/WoodFloor>,
+                ]
+
+                def Scope "Prototypes"
+                {
+                    def "Apple" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Apple"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Apple>
+                    )
+                    {
+                    }
+
+                    def "CaveEntrance" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "CaveEntrance"
+                            }
+                        }
+                        prepend references = </World/Prototypes/CaveEntrance>
+                    )
+                    {
+                    }
+
+                    def "Grass" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Grass"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Grass>
+                    )
+                    {
+                    }
+
+                    def "Leaves" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Leaves"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Leaves>
+                    )
+                    {
+                    }
+
+                    def "OakWood" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "OakWood"
+                            }
+                        }
+                        prepend references = </World/Prototypes/OakWood>
+                    )
+                    {
+                    }
+
+                    def "Stone" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Stone"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Stone>
+                    )
+                    {
+                    }
+
+                    def "WoodFloor" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "WoodFloor"
+                            }
+                        }
+                        prepend references = </World/Prototypes/WoodFloor>
+                    )
+                    {
+                    }
+                }
+            }
+        }
+
+        def Xform "Room_1_n1" (
+            customData = {
+                dictionary roam = {
+                    string roomType = "mountain"
+                    int x = 1
+                    int y = -1
+                    int z = 0
+                }
+            }
+        )
+        {
+            double3 xformOp:translate = (5, 5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Mesh "Ground"
+            {
+                float3[] extent = [(0, -5, 0), (5, 0, 0)]
+                int[] faceVertexCounts = [4]
+                int[] faceVertexIndices = [0, 1, 2, 3]
+                point3f[] points = [(0, -5, 0), (5, -5, 0), (5, 0, 0), (0, 0, 0)]
+                color3f[] primvars:displayColor = [(0.4117647, 0.40784314, 0.40392157)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def PointInstancer "Tiles"
+            {
+                float3[] extent = [(0, -5, 0), (5, 0, 1.1)]
+                int64[] ids = [0, 16, 32, 48, 384, 385]
+                point3f[] positions = [(0.5, -0.5, 0), (1.5, -0.5, 0), (2.5, -0.5, 0), (3.5, -0.5, 0), (4.5, -4.5, 0), (4.5, -4.5, 0.1)]
+                int[] protoIndices = [4, 0, 3, 1, 2, 4]
+                rel prototypes = [
+                    </World/Surface/Room_1_n1/Tiles/Prototypes/CoalOre>,
+                    </World/Surface/Room_1_n1/Tiles/Prototypes/GoldOre>,
+                    </World/Surface/Room_1_n1/Tiles/Prototypes/Grass>,
+                    </World/Surface/Room_1_n1/Tiles/Prototypes/IronOre>,
+                    </World/Surface/Room_1_n1/Tiles/Prototypes/Stone>,
+                ]
+
+                def Scope "Prototypes"
+                {
+                    def "CoalOre" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "CoalOre"
+                            }
+                        }
+                        prepend references = </World/Prototypes/CoalOre>
+                    )
+                    {
+                    }
+
+                    def "GoldOre" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "GoldOre"
+                            }
+                        }
+                        prepend references = </World/Prototypes/GoldOre>
+                    )
+                    {
+                    }
+
+                    def "Grass" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Grass"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Grass>
+                    )
+                    {
+                    }
+
+                    def "IronOre" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "IronOre"
+                            }
+                        }
+                        prepend references = </World/Prototypes/IronOre>
+                    )
+                    {
+                    }
+
+                    def "Stone" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Stone"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Stone>
+                    )
+                    {
+                    }
+                }
+            }
+        }
+    }
+
+    def Xform "Cave_1" (
+        customData = {
+            dictionary roam = {
+                int z = -1
+            }
+        }
+    )
+    {
+        double3 xformOp:translate = (0, 0, -4)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Xform "Room_0_0" (
+            customData = {
+                dictionary roam = {
+                    string roomType = "cave"
+                    int x = 0
+                    int y = 0
+                    int z = -1
+                }
+            }
+        )
+        {
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Mesh "Ground"
+            {
+                float3[] extent = [(0, -17, 0), (17, 0, 0)]
+                int[] faceVertexCounts = [4]
+                int[] faceVertexIndices = [0, 1, 2, 3]
+                point3f[] points = [(0, -17, 0), (17, -17, 0), (17, 0, 0), (0, 0, 0)]
+                color3f[] primvars:displayColor = [(0.08627451, 0.07058824, 0.0627451)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def PointInstancer "Tiles"
+            {
+                float3[] extent = [(0, -14, 0), (16, 0, 1.3000001)]
+                int64[] ids = [0, 3744, 3745, 3760, 3776]
+                point3f[] positions = [(0.5, -0.5, 0), (13.5, -13.5, 0), (13.5, -13.5, 0.1), (14.5, -13.5, 0), (15.5, -13.5, 0)]
+                int[] protoIndices = [3, 0, 1, 0, 2]
+                rel prototypes = [
+                    </World/Cave_1/Room_0_0/Tiles/Prototypes/CaveFloor>,
+                    </World/Cave_1/Room_0_0/Tiles/Prototypes/CaveLadder>,
+                    </World/Cave_1/Room_0_0/Tiles/Prototypes/CoalOre>,
+                    </World/Cave_1/Room_0_0/Tiles/Prototypes/Stone>,
+                ]
+
+                def Scope "Prototypes"
+                {
+                    def "CaveFloor" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "CaveFloor"
+                            }
+                        }
+                        prepend references = </World/Prototypes/CaveFloor>
+                    )
+                    {
+                    }
+
+                    def "CaveLadder" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "CaveLadder"
+                            }
+                        }
+                        prepend references = </World/Prototypes/CaveLadder>
+                    )
+                    {
+                    }
+
+                    def "CoalOre" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "CoalOre"
+                            }
+                        }
+                        prepend references = </World/Prototypes/CoalOre>
+                    )
+                    {
+                    }
+
+                    def "Stone" (
+                        customData = {
+                            dictionary roam = {
+                                string entityClass = "Stone"
+                            }
+                        }
+                        prepend references = </World/Prototypes/Stone>
+                    )
+                    {
+                    }
+                }
+            }
+        }
+    }
+}
+

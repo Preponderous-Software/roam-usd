@@ -175,6 +175,54 @@ def Xform "World"
             uniform token subdivisionScheme = "none"
         }
 
+        def Mesh "Chest" (
+            customData = {
+                dictionary roam = {
+                    string category = "stateful structure"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.35, -0.35, 0), (0.35, 0.35, 0.6)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.35, -0.35, 0), (0.35, -0.35, 0), (0.35, 0.35, 0), (-0.35, 0.35, 0), (-0.35, -0.35, 0.6), (0.35, -0.35, 0.6), (0.35, 0.35, 0.6), (-0.35, 0.35, 0.6)]
+            color3f[] primvars:displayColor = [(0.6, 0.42, 0.2)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "YoungCrop" (
+            customData = {
+                dictionary roam = {
+                    string category = "stateful structure"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.25, -0.25, 0), (0.25, 0.25, 0.3)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.25, -0.25, 0), (0.25, -0.25, 0), (0.25, 0.25, 0), (-0.25, 0.25, 0), (-0.25, -0.25, 0.3), (0.25, -0.25, 0.3), (0.25, 0.25, 0.3), (-0.25, 0.25, 0.3)]
+            color3f[] primvars:displayColor = [(0.5, 0.8, 0.3)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "MatureCrop" (
+            customData = {
+                dictionary roam = {
+                    string category = "stateful structure"
+                }
+            }
+        )
+        {
+            float3[] extent = [(-0.35, -0.35, 0), (0.35, 0.35, 0.6)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.35, -0.35, 0), (0.35, -0.35, 0), (0.35, 0.35, 0), (-0.35, 0.35, 0), (-0.35, -0.35, 0.6), (0.35, -0.35, 0.6), (0.35, 0.35, 0.6), (-0.35, 0.35, 0.6)]
+            color3f[] primvars:displayColor = [(0.85, 0.75, 0.3)]
+            uniform token subdivisionScheme = "none"
+        }
+
         def Mesh "CoalOre" (
             customData = {
                 dictionary roam = {
@@ -351,6 +399,36 @@ def Xform "World"
                     }
                 }
             }
+
+            def Scope "Creatures"
+            {
+                def Mesh "Rabbit_16_1_1" (
+                    customData = {
+                        dictionary roam = {
+                            int energy = 50
+                            string entityClass = "Rabbit"
+                            string id = "fixture-rabbit-1"
+                            string imagePath = "assets/images/rabbit.png"
+                            int tickCreated = 20
+                            int tickLastReproduced = 25
+                        }
+                    }
+                )
+                {
+                    uniform bool doubleSided = 1
+                    float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0)]
+                    int[] faceVertexCounts = [4]
+                    int[] faceVertexIndices = [0, 1, 2, 3]
+                    point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0)]
+                    color3f[] primvars:displayColor = [(0.8, 0.78, 0.72)]
+                    texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                        interpolation = "vertex"
+                    )
+                    uniform token subdivisionScheme = "none"
+                    double3 xformOp:translate = (16.5, -1.5, 0.11)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+            }
         }
 
         def Xform "Room_0_0" (
@@ -471,6 +549,145 @@ def Xform "World"
                     )
                     {
                     }
+                }
+            }
+
+            def Scope "Creatures"
+            {
+                def Mesh "Chicken_5_5_1" (
+                    customData = {
+                        dictionary roam = {
+                            int energy = 80
+                            string entityClass = "Chicken"
+                            string id = "fixture-chicken-1"
+                            string imagePath = "assets/images/chicken.png"
+                            int tickCreated = 10
+                            int tickLastReproduced = 12
+                        }
+                    }
+                )
+                {
+                    uniform bool doubleSided = 1
+                    float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0)]
+                    int[] faceVertexCounts = [4]
+                    int[] faceVertexIndices = [0, 1, 2, 3]
+                    point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0)]
+                    color3f[] primvars:displayColor = [(0.95, 0.95, 0.9)]
+                    texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                        interpolation = "vertex"
+                    )
+                    uniform token subdivisionScheme = "none"
+                    double3 xformOp:translate = (5.5, -5.5, 0.11)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+
+                def Mesh "Bear_6_5_1" (
+                    customData = {
+                        dictionary roam = {
+                            int energy = 95
+                            string entityClass = "Bear"
+                            string id = "fixture-bear-1"
+                            string imagePath = "assets/images/bear.png"
+                            int tickCreated = 3
+                            int tickLastReproduced = 0
+                        }
+                    }
+                )
+                {
+                    uniform bool doubleSided = 1
+                    float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0)]
+                    int[] faceVertexCounts = [4]
+                    int[] faceVertexIndices = [0, 1, 2, 3]
+                    point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0)]
+                    color3f[] primvars:displayColor = [(0.4, 0.26, 0.13)]
+                    texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                        interpolation = "vertex"
+                    )
+                    uniform token subdivisionScheme = "none"
+                    double3 xformOp:translate = (6.5, -5.5, 0.11)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+
+                def Mesh "Npc_12_12_1" (
+                    customData = {
+                        dictionary roam = {
+                            int energy = 70
+                            string entityClass = "Npc"
+                            string id = "fixture-npc-1"
+                            string imagePath = "assets/images/npc.png"
+                            dictionary npcInventory = {
+                                int Wheat = 1
+                            }
+                            string npcMode = "npc"
+                            int tickCreated = 1
+                            int tickLastReproduced = 0
+                        }
+                    }
+                )
+                {
+                    uniform bool doubleSided = 1
+                    float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0)]
+                    int[] faceVertexCounts = [4]
+                    int[] faceVertexIndices = [0, 1, 2, 3]
+                    point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0)]
+                    color3f[] primvars:displayColor = [(0.3, 0.45, 0.8)]
+                    texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                        interpolation = "vertex"
+                    )
+                    uniform token subdivisionScheme = "none"
+                    double3 xformOp:translate = (12.5, -12.5, 0.11)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+            }
+
+            def Scope "Structures"
+            {
+                def "Chest_9_9" (
+                    customData = {
+                        dictionary roam = {
+                            string entityClass = "Chest"
+                            string id = "fixture-chest-1"
+                            dictionary storedInventory = {
+                                int Apple = 2
+                                int Banana = 1
+                            }
+                        }
+                    }
+                    prepend references = </World/Prototypes/Chest>
+                )
+                {
+                    double3 xformOp:translate = (9.5, -9.5, 0.1)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+
+                def "YoungCrop_10_9" (
+                    customData = {
+                        dictionary roam = {
+                            string entityClass = "YoungCrop"
+                            string id = "fixture-crop-1"
+                            int tickPlanted = 900
+                        }
+                    }
+                    prepend references = </World/Prototypes/YoungCrop>
+                )
+                {
+                    double3 xformOp:translate = (10.5, -9.5, 0.1)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+
+                def "MatureCrop_11_9" (
+                    customData = {
+                        dictionary roam = {
+                            string entityClass = "MatureCrop"
+                            string id = "fixture-crop-2"
+                            int tickPlanted = 500
+                        }
+                    }
+                    prepend references = </World/Prototypes/MatureCrop>
+                )
+                {
+                    double3 xformOp:translate = (11.5, -9.5, 0.1)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
                 }
             }
         }
@@ -669,6 +886,63 @@ def Xform "World"
                     }
                 }
             }
+
+            def Scope "Creatures"
+            {
+                def Mesh "Snake_14_13_1" (
+                    customData = {
+                        dictionary roam = {
+                            int energy = 40
+                            string entityClass = "Snake"
+                            string id = "fixture-snake-1"
+                            string imagePath = "assets/images/snake.png"
+                            int tickCreated = 7
+                            int tickLastReproduced = 0
+                        }
+                    }
+                )
+                {
+                    uniform bool doubleSided = 1
+                    float3[] extent = [(-0.5, -0.5, 0), (0.5, 0.5, 0)]
+                    int[] faceVertexCounts = [4]
+                    int[] faceVertexIndices = [0, 1, 2, 3]
+                    point3f[] points = [(-0.5, -0.5, 0), (0.5, -0.5, 0), (0.5, 0.5, 0), (-0.5, 0.5, 0)]
+                    color3f[] primvars:displayColor = [(0.3, 0.55, 0.2)]
+                    texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                        interpolation = "vertex"
+                    )
+                    uniform token subdivisionScheme = "none"
+                    double3 xformOp:translate = (14.5, -13.5, 0.11)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+            }
+        }
+    }
+
+    def Xform "Player" (
+        customData = {
+            dictionary roam = {
+                string locationId = "r0-0-l-8-8"
+                int roomX = 0
+                int roomY = 0
+                int roomZ = 0
+                int tileX = 8
+                int tileY = 8
+            }
+        }
+    )
+    {
+        double3 xformOp:translate = (8.5, -8.5, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Mesh "Marker"
+        {
+            float3[] extent = [(-0.2, -0.2, 0), (0.2, 0.2, 1.8)]
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            point3f[] points = [(-0.2, -0.2, 0), (0.2, -0.2, 0), (0.2, 0.2, 0), (-0.2, 0.2, 0), (-0.2, -0.2, 1.8), (0.2, -0.2, 1.8), (0.2, 0.2, 1.8), (-0.2, 0.2, 1.8)]
+            color3f[] primvars:displayColor = [(0.1, 0.55, 1)]
+            uniform token subdivisionScheme = "none"
         }
     }
 }

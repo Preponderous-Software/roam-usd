@@ -39,7 +39,11 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+# Roam integration tests are opt-in: `pytest -m roam` with ROAM_USD_ROAM_CHECKOUT set.
+addopts = "-ra -m 'not roam'"
+markers = [
+    "roam: needs a Roam checkout (ROAM_USD_ROAM_CHECKOUT) and Roam's requirements",
+]
 
 [tool.ruff]
 line-length = 100

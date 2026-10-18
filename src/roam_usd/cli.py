@@ -8,13 +8,9 @@ import sys
 from pathlib import Path
 
 from roam_usd import __version__
+from roam_usd.generate import MAX_CAVE_DEPTH, GenerateError, generate_seed
 from roam_usd.save import SaveFormatError, format_info, read_save_dir
 from roam_usd.usd import ExportError, ExportOptions, export_world, output_format
-
-
-def _not_implemented(args: argparse.Namespace) -> int:
-    print(f"roam-usd {args.command}: not yet implemented", file=sys.stderr)
-    return 2
 
 
 def _cmd_info(args: argparse.Namespace) -> int:
@@ -45,6 +41,26 @@ def _cmd_export(args: argparse.Namespace) -> int:
         path = export_world(world, out, binary=args.binary, options=options)
     except (SaveFormatError, ExportError) as exc:
         print(f"roam-usd export: {exc}", file=sys.stderr)
+        return 1
+    print(f"wrote {path}")
+    return 0
+
+
+def _cmd_generate(args: argparse.Namespace) -> int:
+    try:
+        path = generate_seed(
+            args.roam,
+            args.seed,
+            args.output,
+            radius=args.radius,
+            cave_depth=args.cave_depth,
+            home=not args.no_home,
+            binary=args.binary,
+            roam_python=args.roam_python,
+            keep_save=args.keep_saves,
+        )
+    except (GenerateError, SaveFormatError, ExportError) as exc:
+        print(f"roam-usd generate: {exc}", file=sys.stderr)
         return 1
     print(f"wrote {path}")
     return 0
@@ -81,7 +97,38 @@ def build_parser() -> argparse.ArgumentParser:
     generate = sub.add_parser(
         "generate", help="generate worlds from seeds with Roam's own generator, then export"
     )
-    generate.set_defaults(func=_not_implemented)
+    generate.add_argument(
+        "--roam", required=True, metavar="ROAM_CHECKOUT", help="your local clone of Roam"
+    )
+    generate.add_argument("--seed", type=int, required=True, help="the world's seed")
+    generate.add_argument(
+        "--radius", type=int, default=2, help="rooms within this distance of (0, 0) (default 2)"
+    )
+    generate.add_argument(
+        "--cave-depth",
+        type=int,
+        default=MAX_CAVE_DEPTH,
+        choices=range(0, MAX_CAVE_DEPTH + 1),
+        metavar="D",
+        help=f"cave levels to generate below cave entrances, 0-{MAX_CAVE_DEPTH} "
+        f"(default {MAX_CAVE_DEPTH})",
+    )
+    generate.add_argument(
+        "--no-home", action="store_true", help="do not build the starting home in room (0, 0)"
+    )
+    generate.add_argument("--binary", action="store_true", help="write .usdc instead of .usda")
+    generate.add_argument("-o", "--output", default="out", help="output directory (default: out)")
+    generate.add_argument(
+        "--roam-python",
+        metavar="PYTHON",
+        help="interpreter with Roam's requirements installed (default: this one)",
+    )
+    generate.add_argument(
+        "--keep-saves",
+        action="store_true",
+        help="keep each generated Roam save in <output>/seed_<n>_save/",
+    )
+    generate.set_defaults(func=_cmd_generate)
 
     info = sub.add_parser("info", help="print rooms per level and entity counts per class")
     info.add_argument("save", help="a Roam save folder, e.g. saves/defaultsavefile")

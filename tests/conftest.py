@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -42,3 +43,18 @@ def check_golden(actual: Path, name: str, update: bool) -> None:
     assert data == golden.read_bytes(), (
         f"{actual} differs from {golden}; if the change is intended, run pytest --update-golden"
     )
+
+
+@pytest.fixture
+def roam_checkout() -> Path:
+    """The Roam checkout for ``-m roam`` tests (ROAM_USD_ROAM_CHECKOUT)."""
+    value = os.environ.get("ROAM_USD_ROAM_CHECKOUT")
+    if not value:
+        pytest.skip("set ROAM_USD_ROAM_CHECKOUT to a Roam checkout to run Roam integration tests")
+    return Path(value)
+
+
+@pytest.fixture
+def roam_python() -> str | None:
+    """Interpreter with Roam's requirements (ROAM_USD_ROAM_PYTHON; default: this one)."""
+    return os.environ.get("ROAM_USD_ROAM_PYTHON") or None

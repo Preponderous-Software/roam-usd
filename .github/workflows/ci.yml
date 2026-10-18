@@ -30,3 +30,33 @@ jobs:
           ruff format --check .
       - name: Pytest
         run: python -m pytest
+
+  roam-integration:
+    name: Roam integration (pinned Roam)
+    # Every push to main, and every pull request.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      # Roam is read, never vendored: cloned at this commit into the runner's temp dir.
+      ROAM_SHA: a8d9ad6bc819d02195d047b103b96eb56d55063c
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clone Roam at the pinned commit
+        run: |
+          git init -q "$RUNNER_TEMP/roam"
+          git -C "$RUNNER_TEMP/roam" remote add origin https://github.com/Preponderous-Software/roam.git
+          git -C "$RUNNER_TEMP/roam" fetch -q --depth 1 origin "$ROAM_SHA"
+          git -C "$RUNNER_TEMP/roam" checkout -q FETCH_HEAD
+          git -C "$RUNNER_TEMP/roam" rev-parse HEAD
+      - name: Install roam-usd and Roam's requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install -r "$RUNNER_TEMP/roam/requirements.txt"
+      - name: Integration tests
+        env:
+          ROAM_USD_ROAM_CHECKOUT: ${{ runner.temp }}/roam
+        run: python -m pytest -m roam -v -s

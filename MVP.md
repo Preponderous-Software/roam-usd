@@ -63,32 +63,48 @@ Each milestone maps 1:1 to a GitHub issue labelled `mvp`.
 
 ### M1 — Project skeleton and CI
 
+Tracked in [#1](https://github.com/Preponderous-Software/roam-usd/issues/1).
+
 Package layout (`src/roam_usd/`), `pyproject.toml` with `usd-core>=26.3,<27`, the `roam-usd` console script with `export`, `generate` and `info` subcommands as stubs, `pytest` + `ruff` configuration, and a GitHub Actions workflow running lint and tests on Python 3.10–3.13.
 
 ### M2 — Save reader and WorldModel
+
+Tracked in [#2](https://github.com/Preponderous-Software/roam-usd/issues/2).
 
 `roam_usd.save` reads a save directory into plain dataclasses (`World`, `Level`, `Room`, `Tile`, `EntityRecord`, `PlayerMarker`), following the rules in [ARCHITECTURE.md § Save reader](./ARCHITECTURE.md#1-save-reader-roam_usdsave). Hand-written fixtures cover surface and cave rooms, missing `z`, negative coordinates, a non-17 grid, unknown classes, `Player` records and a malformed file. `roam-usd info` prints rooms per level and entity counts per class.
 
 ### M3 — Entity catalog
 
+Tracked in [#3](https://github.com/Preponderous-Software/roam-usd/issues/3).
+
 `roam_usd.catalog` assigns every known `entityClass` a category (ground, solid, flora, structure, item, stateful structure, creature), a prototype shape, height and colour, per the [mapping table](./ARCHITECTURE.md#roam--usd-mapping). Includes the fallback entry and a test that the catalog covers a given class list.
 
 ### M4 — USD stage writer: levels, rooms, ground and instanced tiles
+
+Tracked in [#4](https://github.com/Preponderous-Software/roam-usd/issues/4).
 
 `roam_usd.usd` writes the stage hierarchy (`/World`, level prims, `Room_<x>_<y>`), ground quads coloured from `backgroundColor`, shared prototypes under `/World/Prototypes`, and one `PointInstancer` per room with `protoIndices`, `positions` and coordinate-derived `ids`; entity stacks rise in file order. Stage metadata (`upAxis`, `metersPerUnit`, `customLayerData`). Deterministic `.usda` output, golden tests, compliance check. `roam-usd export` works end to end for tiles.
 
 ### M5 — Creatures, stateful structures and the player
 
+Tracked in [#5](https://github.com/Preponderous-Software/roam-usd/issues/5).
+
 Individual prims for creatures (`Bear`, `Chicken`, `Deer`, `Rabbit`, `Snake`, `Wolf`, `Npc`), stateful structures (`Chest`, `IronChest`, `YoungCrop`, `MatureCrop`) and the player marker (from `playerLocation.json`, honouring `roomZ`), with Roam fields carried as `customData["roam:*"]` and chest contents summarised by class and count.
 
 ### M6 — Seeded generation driver
+
+Tracked in [#6](https://github.com/Preponderous-Software/roam-usd/issues/6).
 
 `roam-usd generate --roam <checkout> --seed N` runs `roam_usd/_driver.py` in a subprocess with the checkout as working directory: seeds `random`, generates rooms in a fixed spiral order within `--radius` using Roam's `Map` and `NullRenderer`, builds the starting home (unless `--no-home`), descends into caves under rooms with a `CaveEntrance` down to `--cave-depth`, writes rooms with Roam's `RoomJsonReaderWriter.generateJsonForRoom`, and writes `roam-usd-manifest.json`. The exporter reads the manifest for `roomType`, seed and Roam commit. CI integration job clones Roam at the pinned SHA and checks determinism.
 
 ### M7 — Batch seeds and contact sheet
 
+Tracked in [#7](https://github.com/Preponderous-Software/roam-usd/issues/7).
+
 `--seeds A..B` (and comma lists) generate and export one stage per seed, then write `index.usda` referencing each seed's stage, laid out in a square grid with spacing derived from the largest world, each labelled with its seed in `customData`.
 
 ### M8 — Browser save bundles, viewer verification and docs
+
+Tracked in [#8](https://github.com/Preponderous-Software/roam-usd/issues/8).
 
 `roam_usd.save` accepts a `roam-saves` bundle (validates `format`/`version`, lists worlds, decodes the selected world's files in memory). README gains install/usage sections, the license note for `generate`, and `usdview` + Blender screenshots of a fixture world and a generated world; a headless Blender import smoke test runs in CI if Blender is available, otherwise a documented manual checklist.

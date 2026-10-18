@@ -275,3 +275,52 @@ def test_cli_export_roam_not_a_dir(tmp_path, basic_save, capsys):
 )
 def test_inventory_summary(inventory, summary):
     assert inventory_summary(inventory) == summary
+
+
+@pytest.mark.parametrize("escape", ["outside", "absolute", "symlink"])
+def test_sprite_paths_must_stay_inside_the_checkout(tmp_path, fake_roam, caplog, escape):
+    outside = tmp_path / "outside.png"
+    outside.write_bytes(png_bytes())
+    if escape == "outside":
+        image_path = "../outside.png"
+    elif escape == "absolute":
+        image_path = str(outside)
+    else:
+        (fake_roam / "assets" / "images" / "link.png").symlink_to(outside)
+        image_path = "assets/images/link.png"
+    save = tmp_path / "save"
+    (save / "rooms").mkdir(parents=True)
+    room = {
+        "backgroundColor": "(1, 2, 3)",
+        "x": 0,
+        "y": 0,
+        "grid": {
+            "columns": 1,
+            "rows": 1,
+            "locations": [
+                {
+                    "id": "a",
+                    "x": 0,
+                    "y": 0,
+                    "entities": [{"entityClass": "Bear", "imagePath": image_path}],
+                }
+            ],
+        },
+    }
+    (save / "rooms" / "room_0_0.json").write_text(json.dumps(room))
+    with caplog.at_level(logging.WARNING, logger="roam_usd.usd"):
+        stage = build_stage(read_save_dir(save), ExportOptions(roam_checkout=fake_roam))
+    card = stage.GetPrimAtPath("/World/Surface/Room_0_0/Creatures/Bear_0_0_0")
+    assert not UsdShade.MaterialBindingAPI(card).ComputeBoundMaterial()[0]
+    assert not stage.GetPrimAtPath("/World/Looks")
+    assert "outside" in caplog.text
+
+
+def test_player_location_id_follows_include_ids(world):
+    stage_with = build_stage(world)
+    with_ids = stage_with.GetPrimAtPath("/World/Player")
+    assert with_ids.GetCustomDataByKey("roam:locationId") == "r0-0-l-8-8"
+    stage_without = build_stage(world, ExportOptions(include_ids=False))
+    without = stage_without.GetPrimAtPath("/World/Player")
+    assert without.GetCustomDataByKey("roam:locationId") is None
+    assert without.GetCustomDataByKey("roam:tileX") == 8

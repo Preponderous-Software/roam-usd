@@ -331,13 +331,22 @@ class StageWriter:
             return None
         if image_path in self._materials:
             return self._materials[image_path]
-        file = (Path(checkout) / image_path).resolve()
-        if not file.is_file():
+        root = Path(checkout).resolve()
+        file = (root / image_path).resolve()
+        # imagePath comes from the save: only files inside the checkout (after resolving
+        # "..", absolute paths and symlinks) may become texture references.
+        problem = None
+        if not file.is_relative_to(root):
+            problem = "is outside"
+        elif not file.is_file():
+            problem = "not found in"
+        if problem is not None:
             if image_path not in self._warned_sprites:
                 self._warned_sprites.add(image_path)
                 log.warning(
-                    "sprite %s not found in %s; leaving those cards untextured",
+                    "sprite %s %s %s; leaving those cards untextured",
                     image_path,
+                    problem,
                     checkout,
                 )
             self._materials[image_path] = None
@@ -436,11 +445,12 @@ class StageWriter:
             ("roomX", player.room_x),
             ("roomY", player.room_y),
             ("roomZ", player.room_z),
-            ("locationId", player.location_id),
             ("tileX", tile.x),
             ("tileY", tile.y),
         ):
             prim.SetCustomDataByKey(f"roam:{key}", value)
+        if self.options.include_ids:
+            prim.SetCustomDataByKey("roam:locationId", player.location_id)
         define_box(self.stage, Sdf.Path("/World/Player/Marker"), PLAYER_MARKER)
 
 

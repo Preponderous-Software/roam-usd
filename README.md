@@ -34,7 +34,7 @@ Command | Effect
 `roam-usd generate --roam <roam-checkout> --seeds 1..16 -o out/` | Generate and export 16 worlds, plus `out/index.usda` showing them side by side (`--seeds 1,5,9` lists seeds; a list starting with a negative seed needs `=`, as in `--seeds=-2..1`)
 `roam-usd info <save-dir or bundle.json> [--world NAME]` | Print rooms per level, entity counts per class and the player position; for a bundle, list its worlds
 
-`export` writes `world.usda` (or `world.usdc` with `--binary`) when `-o` is not given; `generate` writes to `out/`. Run `roam-usd <command> --help` for every option (`generate` also has `--cave-depth 0-3`, `--no-home`, `--roam-python` and `--keep-saves`).
+`export` writes `world.usda` (or `world.usdc` with `--binary`) when `-o` is not given; `generate` writes to `out/`. Run `roam-usd <command> --help` for every option (`generate` also has `--binary`, `--cave-depth 0-3`, `--no-home`, `--roam-python` and `--keep-saves`).
 
 ### Where Roam keeps its saves
 Each world is a folder under Roam's saves directory; the default world is `defaultsavefile` ([`Config.getSavesBaseDirectory`](https://github.com/Preponderous-Software/roam/blob/a8d9ad6bc819d02195d047b103b96eb56d55063c/src/config/config.py#L82-L102) at the pinned commit):
@@ -115,7 +115,7 @@ python -m pytest                       # unit, golden and stage-validity tests
 ROAM_USD_ROAM_CHECKOUT=<roam-checkout> python -m pytest -m roam     # against a real Roam clone
 ROAM_USD_BLENDER_PYTHON=<python-with-bpy> python -m pytest -m blender   # Blender import (bpy 4.2, Python 3.11)
 ```
-Golden files in `tests/golden/` are rewritten only on purpose, with `python -m pytest --update-golden`. CI runs lint and tests on Python 3.10 – 3.13, the Roam integration tests against Roam at the pinned commit, and the Blender import smoke test.
+Golden files in `tests/golden/` are rewritten only on purpose, with `python -m pytest --update-golden`. CI runs lint and tests on Python 3.10 – 3.13, the Roam integration tests against Roam at the pinned commit, and the Blender import smoke test; a separate `USD asset gate` workflow checks the committed and freshly generated stages with [usd-asset-gate](https://github.com/Preponderous-Software/usd-asset-gate) (see [ARCHITECTURE.md § Testing strategy](./ARCHITECTURE.md#testing-strategy)).
 
 ## Support
 You can find the support discord server [here](https://discord.gg/49J4RHQxhy).

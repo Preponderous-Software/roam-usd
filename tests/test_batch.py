@@ -6,7 +6,13 @@ import pytest
 from pxr import Usd, UsdGeom
 
 from roam_usd.cli import main
-from roam_usd.generate import generate_batch, generate_seed, parse_seeds, seed_prim_name
+from roam_usd.generate import (
+    MAX_BATCH,
+    generate_batch,
+    generate_seed,
+    parse_seeds,
+    seed_prim_name,
+)
 from roam_usd.validate import validation_errors
 from test_generate import write_fake_roam
 
@@ -31,6 +37,15 @@ def test_parse_seeds(text, seeds):
 def test_parse_seeds_rejects(text):
     with pytest.raises(ValueError):
         parse_seeds(text)
+
+
+def test_parse_seeds_batch_cap():
+    assert len(parse_seeds("0..9999")) == MAX_BATCH == 10_000
+    assert len(parse_seeds("0..9999,5")) == MAX_BATCH  # repeats do not count
+    with pytest.raises(ValueError, match="is larger than 10000 seeds"):
+        parse_seeds("0..10000")
+    with pytest.raises(ValueError, match="more than 10000 seeds"):
+        parse_seeds("0..9999,10000")
 
 
 def test_seed_prim_name():

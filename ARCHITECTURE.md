@@ -94,7 +94,7 @@ Builds the stage with `pxr` (from `usd-core`). Writes text `.usda` by default (d
 ```
 roam-usd export <save-dir | bundle.json> [--world NAME] [-o world.usda] [--binary] [--levels all|surface] [--roam <roam-checkout>] [--textures]   # --textures: post-MVP, not implemented yet
 roam-usd generate --roam <roam-checkout> (--seed N | --seeds A..B|A,B,C) [--radius R] [--cave-depth D] [--no-home] [--binary] [-o out/] [--roam-python PYTHON] [--keep-saves]
-roam-usd info <save-dir | bundle.json> [--world NAME]   # rooms, levels, entity counts; lists a bundle's worlds; no USD needed
+roam-usd info <save-dir | bundle.json> [--world NAME]   # tick, rooms, levels, entity counts, player position; lists a bundle's worlds; no USD needed
 ```
 
 `generate --seeds A..B` (or a comma list, `--seeds 1,5,9`, or a mix of both, `--seeds 1..3,7`; a seed listed twice is generated once; at most 10,000 distinct seeds per run, and no single range may span more) writes one stage per seed plus `index.usda`, which references every seed's stage laid out on a grid (the "contact sheet"). Each seed is referenced (by a relative path, so the folder can be moved) under `/Index/Seed_<n>` with `customData["roam:seed"]`; the grid has ⌈√N⌉ columns, rows run towards −Y, and every cell is the size of the largest world's bounding box plus a margin (10 %, at least 4 units), so no two worlds overlap. Each seed gets its own driver process, so worlds share no state, and each per-seed stage is byte-identical to a `--seed <n>` run with the same flags.

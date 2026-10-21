@@ -32,7 +32,7 @@ Command | Effect
 `roam-usd export roam-saves-<date>.json --world save_1 -o world.usda` | Export one world from a browser save download (the **Saves** button in Roam's browser build)
 `roam-usd generate --roam <roam-checkout> --seed 7 --radius 3 -o out/` | Generate a 7×7-room world from seed 7 with Roam's own generator, then export it to `out/seed_7.usda`
 `roam-usd generate --roam <roam-checkout> --seeds 1..16 -o out/` | Generate and export 16 worlds, plus `out/index.usda` showing them side by side (`--seeds 1,5,9` lists seeds; a list starting with a negative seed needs `=`, as in `--seeds=-2..1`)
-`roam-usd info <save-dir or bundle.json> [--world NAME]` | Print rooms per level, entity counts per class and the player position; for a bundle, list its worlds
+`roam-usd info <save-dir or bundle.json> [--world NAME]` | Print the save's tick, rooms per level, entity counts per class and the player position; for a bundle, list its worlds
 
 `export` writes `world.usda` (or `world.usdc` with `--binary`) when `-o` is not given; `generate` writes to `out/`. Run `roam-usd <command> --help` for every option (`generate` also has `--binary`, `--cave-depth 0-3`, `--no-home`, `--roam-python` and `--keep-saves`).
 

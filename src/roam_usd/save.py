@@ -229,7 +229,7 @@ def read_save_dir(path: str | Path, source: str | None = None) -> World:
 
 
 def format_info(world: World) -> str:
-    """The text ``roam-usd info`` prints: rooms per level, entity counts, player."""
+    """The text ``roam-usd info`` prints: tick, rooms per level, entity counts, player."""
     lines = [f"World: {world.source}"]
     lines.append(f"Tick: {world.tick if world.tick is not None else 'unknown'}")
     rooms = world.rooms()

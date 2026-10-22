@@ -182,7 +182,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     generate.set_defaults(func=_cmd_generate)
 
-    info = sub.add_parser("info", help="print rooms per level and entity counts per class")
+    info = sub.add_parser(
+        "info",
+        help="print the tick, rooms per level, entity counts per class and the player "
+        "position; for a bundle, list its worlds",
+    )
     info.add_argument("save", help=SAVE_HELP)
     info.add_argument(
         "--world", metavar="NAME", help="the world to read from a browser save bundle"

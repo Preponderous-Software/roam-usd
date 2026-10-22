@@ -27,6 +27,14 @@ def test_help_lists_subcommands(capsys):
         assert command in out
 
 
+def test_help_describes_info_output(capsys):
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    out = " ".join(capsys.readouterr().out.split())
+    for part in ("tick", "rooms per level", "entity counts per class", "player position"):
+        assert part in out
+
+
 def test_console_script_help():
     result = subprocess.run(
         [sys.executable, "-m", "roam_usd", "--help"], capture_output=True, text=True, check=True

@@ -117,7 +117,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", metavar="<command>")
     sub.required = True
 
-    export = sub.add_parser("export", help="export a Roam save folder to a USD stage")
+    export = sub.add_parser(
+        "export",
+        help="export a Roam save folder, or one world of a browser save bundle, to a USD stage",
+    )
     export.add_argument("save", help=SAVE_HELP)
     export.add_argument(
         "--world", metavar="NAME", help="the world to read from a browser save bundle"

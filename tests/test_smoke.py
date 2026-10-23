@@ -35,6 +35,13 @@ def test_help_describes_info_output(capsys):
         assert part in out
 
 
+def test_help_says_export_reads_bundles(capsys):
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    out = " ".join(capsys.readouterr().out.split())
+    assert "one world of a browser save bundle" in out
+
+
 def test_console_script_help():
     result = subprocess.run(
         [sys.executable, "-m", "roam_usd", "--help"], capture_output=True, text=True, check=True

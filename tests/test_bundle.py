@@ -6,7 +6,13 @@ import pytest
 from pxr import Usd
 
 from roam_usd.cli import main
-from roam_usd.save import SaveFormatError, read_bundle, read_bundle_world, read_save
+from roam_usd.save import (
+    SaveFormatError,
+    bundle_world_names,
+    read_bundle,
+    read_bundle_world,
+    read_save,
+)
 
 
 @pytest.fixture
@@ -35,6 +41,7 @@ ROOM = json.dumps(
 
 def test_lists_worlds(bundle):
     assert list(read_bundle(bundle)) == ["caves", "save_1"]
+    assert bundle_world_names(bundle) == ["caves", "save_1"]
 
 
 def test_reads_each_world_in_memory(bundle, tmp_path, monkeypatch):

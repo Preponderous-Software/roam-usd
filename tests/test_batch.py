@@ -10,8 +10,10 @@ from roam_usd.generate import (
     MAX_BATCH,
     generate_batch,
     generate_seed,
+    index_name,
     parse_seeds,
     seed_prim_name,
+    stage_name,
 )
 from roam_usd.validate import validation_errors
 from test_generate import write_fake_roam
@@ -50,6 +52,12 @@ def test_parse_seeds_batch_cap():
 
 def test_seed_prim_name():
     assert seed_prim_name(3) == "Seed_3" and seed_prim_name(-3) == "Seed_n3"
+
+
+def test_stage_and_index_names_follow_the_format():
+    assert stage_name(7) == "seed_7.usda" and stage_name(7, binary=True) == "seed_7.usdc"
+    assert stage_name(-2) == "seed_-2.usda"
+    assert index_name() == "index.usda" and index_name(binary=True) == "index.usdc"
 
 
 def test_seed_and_seeds_are_exclusive(tmp_path, capsys):

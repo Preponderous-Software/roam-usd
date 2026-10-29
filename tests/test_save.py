@@ -5,7 +5,13 @@ import pytest
 
 from roam_usd.cli import main
 from roam_usd.model import UNKNOWN_ROOM_TYPE
-from roam_usd.save import SaveFormatError, parse_background_color, read_save_dir
+from roam_usd.save import (
+    SaveFormatError,
+    parse_background_color,
+    parse_player_location,
+    parse_tick,
+    read_save_dir,
+)
 
 
 def write_room(save_dir, name, room):
@@ -119,6 +125,59 @@ def test_player_room_z_defaults_to_zero(tmp_path):
     write_room(tmp_path, "room_0_0.json", minimal_room())
     (tmp_path / "playerLocation.json").write_text('{"roomX": 0, "roomY": 0, "locationId": "x"}')
     assert read_save_dir(tmp_path).player.room_z == 0
+
+
+def test_parse_player_location():
+    p = parse_player_location({"roomX": -1, "roomY": 2, "roomZ": -3, "locationId": "l"}, "p")
+    assert (p.room_x, p.room_y, p.room_z, p.location_id) == (-1, 2, -3, "l")
+
+
+@pytest.mark.parametrize(
+    "data, message",
+    [
+        ({"roomY": 0, "locationId": "l"}, "missing field 'roomX'"),
+        ({"roomX": True, "roomY": 0, "locationId": "l"}, "invalid field 'roomX'"),
+        ({"roomX": 0, "roomY": 0, "roomZ": "1", "locationId": "l"}, "invalid field 'roomZ'"),
+        ({"roomX": 0, "roomY": 0, "roomZ": False, "locationId": "l"}, "invalid field 'roomZ'"),
+        ({"roomX": 0, "roomY": 0}, "missing field 'locationId'"),
+        ({"roomX": 0, "roomY": 0, "locationId": 7}, "invalid field 'locationId'"),
+        ([], "missing field 'roomX'"),
+    ],
+)
+def test_parse_player_location_rejects(data, message):
+    with pytest.raises(SaveFormatError, match=message) as exc:
+        parse_player_location(data, "save/playerLocation.json")
+    assert str(exc.value).startswith("save/playerLocation.json: ")
+
+
+def test_parse_tick():
+    assert parse_tick({"tick": 0}, "t") == 0
+    assert parse_tick({"tick": 1200}, "t") == 1200
+
+
+@pytest.mark.parametrize(
+    "data, message",
+    [
+        ({}, "missing field 'tick'"),
+        ({"tick": True}, "invalid field 'tick'"),
+        ({"tick": "1200"}, "invalid field 'tick'"),
+        ({"tick": 12.5}, "invalid field 'tick'"),
+        (1200, "missing field 'tick'"),
+    ],
+)
+def test_parse_tick_rejects(data, message):
+    with pytest.raises(SaveFormatError, match=message) as exc:
+        parse_tick(data, "save/tick.json")
+    assert str(exc.value).startswith("save/tick.json: ")
+
+
+def test_invalid_player_location_names_the_file(tmp_path):
+    write_room(tmp_path, "room_0_0.json", minimal_room())
+    (tmp_path / "playerLocation.json").write_text(
+        '{"roomX": 0, "roomY": 0, "roomZ": "deep", "locationId": "x"}'
+    )
+    with pytest.raises(SaveFormatError, match=r"playerLocation\.json: invalid field 'roomZ'"):
+        read_save_dir(tmp_path)
 
 
 def test_missing_player_and_tick_are_optional(tmp_path):

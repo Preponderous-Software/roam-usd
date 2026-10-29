@@ -9,6 +9,7 @@ from pxr import Gf, Usd, UsdGeom
 from conftest import check_golden
 from roam_usd import catalog
 from roam_usd.cli import main
+from roam_usd.model import Room, level_name
 from roam_usd.save import read_save_dir
 from roam_usd.usd import (
     LEVEL_SPACING,
@@ -18,7 +19,11 @@ from roam_usd.usd import (
     export_world,
     id_stride,
     instance_id,
+    output_format,
     prim_coord,
+    prototype_name,
+    room_prim_name,
+    tile_center,
 )
 from roam_usd.validate import validation_errors
 
@@ -312,6 +317,58 @@ def test_id_stride():
     assert id_stride(100) == 128
     with pytest.raises(ValueError):
         instance_id(0, 0, 17, 16)
+
+
+@pytest.mark.parametrize(
+    "z, name",
+    [(0, "Surface"), (-1, "Cave_1"), (-3, "Cave_3"), (2, "Level_2")],
+)
+def test_level_name(z, name):
+    assert level_name(z) == name
+
+
+@pytest.mark.parametrize(
+    "x, y, name",
+    [(0, 0, "Room_0_0"), (-1, 2, "Room_n1_2"), (3, -12, "Room_3_n12")],
+)
+def test_room_prim_name(x, y, name):
+    room = Room(x, y, 0, 17, 17, (0, 0, 0), "unknown", "", ())
+    assert room_prim_name(room) == name
+
+
+def test_tile_center_flips_y():
+    assert tile_center(0, 0) == (0.5, -0.5)
+    assert tile_center(16, 3) == (16.5, -3.5)
+
+
+@pytest.mark.parametrize(
+    "entity_class, name",
+    [("Grass", "Grass"), ("Glow-shroom", "Glow_shroom"), ("Odd Thing", "Odd_Thing")],
+)
+def test_prototype_name_is_a_valid_identifier(entity_class, name):
+    assert prototype_name(entity_class) == name
+
+
+@pytest.mark.parametrize(
+    "path, binary, fmt",
+    [
+        ("w.usda", False, "usda"),
+        ("w.usdc", True, "usdc"),
+        ("W.USDA", False, "usda"),
+        ("W.USDC", True, "usdc"),
+        ("w.usd", False, "usda"),
+        ("w.usd", True, "usdc"),
+    ],
+)
+def test_output_format(path, binary, fmt):
+    assert output_format(path, binary) == fmt
+
+
+def test_output_format_error_names_the_flag():
+    with pytest.raises(ExportError, match="without --binary needs a .usda or .usd name"):
+        output_format("w.usdc", False)
+    with pytest.raises(ExportError, match="with --binary needs a .usdc or .usd name"):
+        output_format("w.usda", True)
 
 
 def test_unwritable_destination_is_an_export_error(tmp_path, world, basic_save, capsys):

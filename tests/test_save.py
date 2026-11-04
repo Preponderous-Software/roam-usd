@@ -7,8 +7,10 @@ from roam_usd.cli import main
 from roam_usd.model import UNKNOWN_ROOM_TYPE
 from roam_usd.save import (
     SaveFormatError,
+    format_info,
     parse_background_color,
     parse_player_location,
+    parse_room,
     parse_tick,
     read_save_dir,
 )
@@ -197,6 +199,7 @@ def test_malformed_room_names_file_and_field(malformed_save):
     "mutate, field",
     [
         (lambda r: r.pop("x"), "'x'"),
+        (lambda r: r.update(x=True), "'x'"),
         (lambda r: r.update(y="1"), "'y'"),
         (lambda r: r.update(z=True), "'z'"),
         (lambda r: r["grid"].pop("columns"), "'columns'"),
@@ -311,3 +314,91 @@ def test_invalid_utf8_names_file(tmp_path, name, capsys):
     assert name.split("/")[-1] in str(exc.value)
     assert main(["info", str(tmp_path)]) == 1
     assert "UTF-8" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("data", [[], "room", 7, None])
+def test_room_file_must_hold_an_object(tmp_path, data):
+    write_room(tmp_path, "room_0_0.json", data)
+    with pytest.raises(SaveFormatError, match=r"room_0_0\.json: a room file must hold"):
+        read_save_dir(tmp_path)
+
+
+@pytest.mark.parametrize("columns, rows", [(0, 3), (3, 0), (-1, 3)])
+def test_grid_size_must_be_positive(tmp_path, columns, rows):
+    room = minimal_room()
+    room["grid"].update(columns=columns, rows=rows)
+    write_room(tmp_path, "room_0_0.json", room)
+    with pytest.raises(SaveFormatError, match=f"got {columns}x{rows}"):
+        read_save_dir(tmp_path)
+
+
+def test_duplicate_tile_is_an_error(tmp_path):
+    room = minimal_room()
+    room["grid"]["locations"] = [{"x": 1, "y": 2, "entities": []}] * 2
+    write_room(tmp_path, "room_0_0.json", room)
+    with pytest.raises(SaveFormatError, match=r"locations\[1\]: duplicate tile \(1, 2\)"):
+        read_save_dir(tmp_path)
+
+
+def test_tiles_sorted_by_row_then_column():
+    room = minimal_room()
+    room["grid"]["locations"] = [
+        {"x": x, "y": y, "entities": []} for x, y in [(0, 1), (2, 0), (1, 0)]
+    ]
+    tiles = parse_room(room, "room").tiles
+    assert [(t.x, t.y) for t in tiles] == [(1, 0), (2, 0), (0, 1)]
+
+
+@pytest.mark.parametrize(
+    "extra, name",
+    [({}, "(2, -1)"), ({"name": "Home"}, "Home"), ({"name": 7}, "(2, -1)")],
+)
+def test_room_name_falls_back_to_its_coordinates(extra, name):
+    assert parse_room(minimal_room(x=2, y=-1, **extra), "room").name == name
+
+
+def test_levels_run_downwards_with_rooms_sorted_by_row_then_column(tmp_path):
+    write_room(tmp_path, "room_0_0_-2.json", minimal_room(z=-2))
+    write_room(tmp_path, "room_1_1.json", minimal_room(x=1, y=1))
+    write_room(tmp_path, "room_1_0.json", minimal_room(x=1, y=0))
+    write_room(tmp_path, "room_0_1.json", minimal_room(x=0, y=1))
+    write_room(tmp_path, "room_0_0_-1.json", minimal_room(z=-1))
+    world = read_save_dir(tmp_path)
+    assert [level.z for level in world.levels] == [0, -1, -2]
+    assert [(r.x, r.y) for r in world.levels[0].rooms] == [(1, 0), (0, 1), (1, 1)]
+
+
+def test_a_file_is_not_a_save_dir(tmp_path):
+    path = tmp_path / "save.json"
+    path.write_text("{}")
+    with pytest.raises(SaveFormatError, match="not a directory"):
+        read_save_dir(path)
+
+
+def test_info_without_tick_or_player(tmp_path):
+    write_room(tmp_path, "room_0_0.json", minimal_room())
+    lines = format_info(read_save_dir(tmp_path, source="label")).splitlines()
+    assert lines == [
+        "World: label",
+        "Tick: unknown",
+        "Rooms: 1",
+        "  Surface (z=0): 1 room",
+        "Entities: 0",
+        "Player: not recorded",
+    ]
+
+
+def test_info_shows_a_tick_of_zero(tmp_path):
+    write_room(tmp_path, "room_0_0.json", minimal_room())
+    (tmp_path / "tick.json").write_text('{"tick": 0}')
+    assert "Tick: 0" in format_info(read_save_dir(tmp_path)).splitlines()
+
+
+@pytest.mark.parametrize("room_x, location_id", [(0, "nowhere"), (9, "anything")])
+def test_info_player_tile_not_found(tmp_path, room_x, location_id):
+    write_room(tmp_path, "room_0_0.json", minimal_room())
+    (tmp_path / "playerLocation.json").write_text(
+        json.dumps({"roomX": room_x, "roomY": 0, "locationId": location_id})
+    )
+    lines = format_info(read_save_dir(tmp_path)).splitlines()
+    assert f"Player: room ({room_x}, 0, 0), tile not found" in lines

@@ -510,4 +510,6 @@ def export_world(
 ) -> Path:
     """Build and write ``world``; returns the written path."""
     output_format(path, binary)  # fail before doing any work
+    if not world.rooms():
+        raise ExportError(f"{world.source}: the save holds no rooms, so there is nothing to export")
     return write_stage(build_stage(world, options), path, binary)

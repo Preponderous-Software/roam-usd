@@ -34,7 +34,11 @@ def _bundle_listing(path: str) -> str:
     worlds = read_bundle(path)
     lines = [f"Bundle: {path}", f"Worlds: {len(worlds)}"]
     for name in worlds:
-        rooms = len(read_bundle_world(path, name).rooms())
+        try:
+            rooms = len(read_bundle_world(path, name).rooms())
+        except SaveFormatError as exc:
+            lines.append(f"  {name}: unreadable ({exc})")
+            continue
         lines.append(f"  {name}: {rooms} room{'s' if rooms != 1 else ''}")
     if len(worlds) > 1:
         lines.append("Choose one with --world NAME for details or to export it.")

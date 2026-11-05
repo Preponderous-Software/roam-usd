@@ -331,8 +331,6 @@ def read_bundle_world(path: str | Path, world: str | None = None) -> World:
         for rel in files
         if rel.startswith("rooms/") and "/" not in rel[len("rooms/") :]
     ]
-    if not room_files:
-        raise SaveFormatError(f"{source}: no rooms/ files in this world")
     player = entry("playerLocation.json") if "playerLocation.json" in files else None
     tick = entry("tick.json") if "tick.json" in files else None
     return build_world(room_files, player, tick, source)

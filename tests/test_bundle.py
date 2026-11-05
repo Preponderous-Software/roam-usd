@@ -90,7 +90,6 @@ def test_base64_room_file(tmp_path):
         ({}, {}, "no worlds"),
         ({}, {"/elsewhere/w/x.json": ROOM}, "not under /saves/"),
         ({}, {"/saves/w": ROOM}, "names no world file"),
-        ({}, {"/saves/w/tick.json": "{}"}, "no rooms/"),
         ({}, {"/saves/w/rooms/room_0_0.json": 5}, "content must be"),
         ({}, {"/saves/w/rooms/room_0_0.json": {"base64": "!!"}}, "invalid base64"),
         ({}, {"/saves/w/rooms/room_0_0.json": "{"}, "room_0_0.json: not valid JSON"),
@@ -144,3 +143,67 @@ def test_cli_export_each_world(bundle, tmp_path, world, rooms):
 def test_cli_export_needs_world(bundle, tmp_path, capsys):
     assert main(["export", str(bundle), "-o", str(tmp_path / "w.usda")]) == 1
     assert "choose one with --world" in capsys.readouterr().err
+
+
+# A world's only file is tick.json; the bundle has no way to hold an empty rooms/ directory.
+ROOMLESS = {"/saves/empty/tick.json": '{"tick": 3}'}
+
+
+def test_roomless_world_reads_as_zero_rooms(tmp_path, capsys):
+    path = write_bundle(tmp_path / "b.json", ROOMLESS)
+    world = read_bundle_world(path)
+    assert world.rooms() == [] and world.tick == 3
+    assert main(["info", str(path), "--world", "empty"]) == 0
+    assert "Rooms: 0" in capsys.readouterr().out
+
+
+def test_cli_export_rejects_roomless_world(tmp_path, capsys):
+    path = write_bundle(tmp_path / "b.json", ROOMLESS)
+    out = tmp_path / "w.usda"
+    assert main(["export", str(path), "--world", "empty", "-o", str(out)]) == 1
+    err = capsys.readouterr().err
+    assert "b.json#empty: the save holds no rooms" in err
+    assert not out.exists()
+
+
+def test_cli_export_rejects_world_with_only_stray_room_files(tmp_path, capsys):
+    path = write_bundle(tmp_path / "b.json", {"/saves/w/rooms/notes.txt": "hi"})
+    out = tmp_path / "w.usda"
+    assert main(["export", str(path), "-o", str(out)]) == 1
+    assert "the save holds no rooms" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_cli_info_lists_a_roomless_world_with_the_others(tmp_path, capsys):
+    files = {**ROOMLESS, "/saves/good/rooms/room_0_0.json": ROOM}
+    path = write_bundle(tmp_path / "b.json", files)
+    assert main(["info", str(path)]) == 0
+    out = capsys.readouterr().out
+    assert "Worlds: 2" in out and "  empty: 0 rooms\n" in out and "  good: 1 room\n" in out
+
+
+@pytest.mark.parametrize(
+    "bad_file, content, problem",
+    [
+        ("rooms/room_0_0.json", "{", "room_0_0.json: not valid JSON"),
+        ("rooms/room_0_0.json", 5, "content must be"),
+        ("tick.json", "{}", "tick.json: missing field 'tick'"),
+    ],
+)
+def test_cli_info_lists_an_unreadable_world_with_the_others(
+    tmp_path, capsys, bad_file, content, problem
+):
+    files = {f"/saves/bad/{bad_file}": content, "/saves/good/rooms/room_0_0.json": ROOM}
+    path = write_bundle(tmp_path / "b.json", files)
+    assert main(["info", str(path)]) == 0
+    captured = capsys.readouterr()
+    (bad_line,) = [line for line in captured.out.splitlines() if line.startswith("  bad: ")]
+    assert "unreadable" in bad_line and problem in bad_line
+    assert "  good: 1 room\n" in captured.out
+    assert captured.err == ""
+
+
+def test_cli_info_unreadable_world_still_fails_when_named(tmp_path, capsys):
+    path = write_bundle(tmp_path / "b.json", {"/saves/bad/rooms/room_0_0.json": "{"})
+    assert main(["info", str(path), "--world", "bad"]) == 1
+    assert "not valid JSON" in capsys.readouterr().err

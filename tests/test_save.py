@@ -228,6 +228,22 @@ def test_invalid_json_names_file(tmp_path):
         read_save_dir(tmp_path)
 
 
+def test_roomless_folder_reads_as_zero_rooms(tmp_path, capsys):
+    (tmp_path / "rooms").mkdir()
+    assert read_save_dir(tmp_path).rooms() == []
+    assert main(["info", str(tmp_path)]) == 0
+    assert "Rooms: 0" in capsys.readouterr().out
+
+
+def test_export_rejects_a_roomless_folder(tmp_path, capsys):
+    save = tmp_path / "save"
+    (save / "rooms").mkdir(parents=True)
+    out = tmp_path / "w.usda"
+    assert main(["export", str(save), "-o", str(out)]) == 1
+    assert "the save holds no rooms" in capsys.readouterr().err
+    assert not out.exists()
+
+
 def test_filename_disagreement_warns_and_uses_contents(tmp_path, caplog):
     write_room(tmp_path, "room_4_4.json", minimal_room(x=1, y=2))
     with caplog.at_level(logging.WARNING):

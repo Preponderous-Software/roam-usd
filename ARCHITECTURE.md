@@ -102,6 +102,8 @@ roam-usd info <save-dir | bundle.json> [--world NAME]   # tick, rooms, levels, e
 
 `--binary` writes `.usdc` instead of `.usda` (for `generate`, every per-seed stage and the index). `--roam` on `export` names the user's Roam checkout that creature sprites are read from (see the mapping below); `generate` already has one. Without it, `export` still needs nothing from Roam and creature cards are left untextured.
 
+`--levels surface` on `export` keeps only the rooms at `z = 0`. A save with rooms but none at the surface is rejected with an error and no file is written, as a roomless save is; the same save exports normally with `--levels all`.
+
 ## Roam → USD mapping
 
 Stage settings: `upAxis = "Z"`, `metersPerUnit = 1`, one tile = 1 × 1 unit, `defaultPrim = /World`.

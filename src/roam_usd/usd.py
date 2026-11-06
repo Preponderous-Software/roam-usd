@@ -512,4 +512,10 @@ def export_world(
     output_format(path, binary)  # fail before doing any work
     if not world.rooms():
         raise ExportError(f"{world.source}: the save holds no rooms, so there is nothing to export")
-    return write_stage(build_stage(world, options), path, binary)
+    writer = StageWriter(world, options)
+    if not writer._levels():
+        raise ExportError(
+            f"{world.source}: the save holds no surface rooms, "
+            "so --levels surface has nothing to export"
+        )
+    return write_stage(writer.build(), path, binary)

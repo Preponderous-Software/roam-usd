@@ -244,6 +244,23 @@ def test_export_rejects_a_roomless_folder(tmp_path, capsys):
     assert not out.exists()
 
 
+def test_export_surface_rejects_a_cave_only_save(tmp_path, capsys):
+    save = tmp_path / "save"
+    write_room(save, "room_0_0_-1.json", minimal_room(z=-1))
+    out = tmp_path / "w.usda"
+    assert main(["export", str(save), "--levels", "surface", "-o", str(out)]) == 1
+    assert "the save holds no surface rooms" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_export_keeps_a_cave_only_save_at_every_level(tmp_path):
+    save = tmp_path / "save"
+    write_room(save, "room_0_0_-1.json", minimal_room(z=-1))
+    out = tmp_path / "w.usda"
+    assert main(["export", str(save), "-o", str(out)]) == 0
+    assert out.exists()
+
+
 def test_filename_disagreement_warns_and_uses_contents(tmp_path, caplog):
     write_room(tmp_path, "room_4_4.json", minimal_room(x=1, y=2))
     with caplog.at_level(logging.WARNING):

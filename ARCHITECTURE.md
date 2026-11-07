@@ -91,7 +91,7 @@ A table, written for this project, mapping each `entityClass` to a category, a p
 
 ### 4. USD stage writer (`roam_usd.usd`)
 
-Builds the stage with `pxr` (from `usd-core`). Writes text `.usda` by default (diffable); `--binary` writes binary `.usdc` instead, and the default output file name's extension follows the flag. An output name given with `-o` must end in `.usda` (`.usdc` with `--binary`) or `.usd`, which takes either format; any other name is rejected before any work is done, and missing parent folders are created. Output is deterministic: rooms and tiles are emitted in sorted order so the same input yields byte-identical `.usda`. The input includes the paths as given: `roam:savePath` is the save path as typed (`<bundle>#<world>` for a bundle world), and sprite materials hold absolute paths into the `--roam` checkout.
+Builds the stage with `pxr` (from `usd-core`). Writes text `.usda` by default (diffable); `--binary` writes binary `.usdc` instead, and the default output file name's extension follows the flag. A file name given to `export -o` must end in `.usda` (`.usdc` with `--binary`) or `.usd`, which takes either format; any other name is rejected before any work is done, and missing parent folders are created. (`generate -o` names a directory.) Output is deterministic: rooms and tiles are emitted in sorted order so the same input yields byte-identical `.usda`. The input includes the paths as given: `roam:savePath` is the save path as typed (`<bundle>#<world>` for a bundle world), and sprite materials hold absolute paths into the `--roam` checkout.
 
 ### 5. CLI (`roam_usd.cli`)
 

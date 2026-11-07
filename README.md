@@ -34,7 +34,7 @@ Command | Effect
 `roam-usd generate --roam <roam-checkout> --seeds 1..16 -o out/` | Generate and export 16 worlds, plus `out/index.usda` showing them side by side (`--seeds 1,5,9` lists seeds; a list starting with a negative seed needs `=`, as in `--seeds=-2..1`)
 `roam-usd info <save-dir or bundle.json> [--world NAME]` | Print the save's tick, rooms per level, entity counts per class and the player position; for a bundle, list its worlds
 
-`export` writes `world.usda` (or `world.usdc` with `--binary`) when `-o` is not given; `generate` writes to `out/`. A name given with `-o` must end in `.usda` (`.usdc` with `--binary`) or `.usd`, which takes either format; missing parent folders are created. Run `roam-usd <command> --help` for every option (`generate` also has `--binary`, `--cave-depth 0-3`, `--no-home`, `--roam-python` and `--keep-saves`).
+`export` writes `world.usda` (or `world.usdc` with `--binary`) when `-o` is not given; `generate` writes to `out/`. A file name given to `export -o` must end in `.usda` (`.usdc` with `--binary`) or `.usd`, which takes either format; missing parent folders are created. Run `roam-usd <command> --help` for every option (`generate` also has `--binary`, `--cave-depth 0-3`, `--no-home`, `--roam-python` and `--keep-saves`).
 
 ### Where Roam keeps its saves
 Each world is a folder under Roam's saves directory; the default world is `defaultsavefile` ([`Config.getSavesBaseDirectory`](https://github.com/Preponderous-Software/roam/blob/a8d9ad6bc819d02195d047b103b96eb56d55063c/src/config/config.py#L82-L102) at the pinned commit):

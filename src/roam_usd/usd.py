@@ -332,14 +332,19 @@ class StageWriter:
         if image_path in self._materials:
             return self._materials[image_path]
         root = Path(checkout).resolve()
-        file = (root / image_path).resolve()
         # imagePath comes from the save: only files inside the checkout (after resolving
-        # "..", absolute paths and symlinks) may become texture references.
+        # "..", absolute paths and symlinks) may become texture references. A name no
+        # file can have (a NUL byte, a component over the filesystem's limit) raises
+        # ValueError or OSError from pathlib, depending on the Python version.
         problem = None
-        if not file.is_relative_to(root):
-            problem = "is outside"
-        elif not file.is_file():
-            problem = "not found in"
+        try:
+            file = (root / image_path).resolve()
+            if not file.is_relative_to(root):
+                problem = "is outside"
+            elif not file.is_file():
+                problem = "not found in"
+        except (OSError, ValueError):
+            problem = "cannot name a file in"
         if problem is not None:
             if image_path not in self._warned_sprites:
                 self._warned_sprites.add(image_path)

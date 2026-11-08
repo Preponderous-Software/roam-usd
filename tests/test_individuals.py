@@ -316,6 +316,42 @@ def test_sprite_paths_must_stay_inside_the_checkout(tmp_path, fake_roam, caplog,
     assert "outside" in caplog.text
 
 
+@pytest.mark.parametrize(
+    "image_path",
+    ["assets/images/a\x00b.png", "x" * 5000 + ".png", "d" * 300 + "/z.png"],
+    ids=["nul-byte", "long-name", "long-directory"],
+)
+def test_sprite_paths_that_cannot_name_a_file_warn(tmp_path, fake_roam, caplog, image_path):
+    save = tmp_path / "save"
+    (save / "rooms").mkdir(parents=True)
+    room = {
+        "backgroundColor": "(1, 2, 3)",
+        "x": 0,
+        "y": 0,
+        "grid": {
+            "columns": 1,
+            "rows": 1,
+            "locations": [
+                {
+                    "id": "a",
+                    "x": 0,
+                    "y": 0,
+                    "entities": [{"entityClass": "Bear", "imagePath": image_path}],
+                }
+            ],
+        },
+    }
+    (save / "rooms" / "room_0_0.json").write_text(json.dumps(room))
+    with caplog.at_level(logging.WARNING, logger="roam_usd.usd"):
+        stage = build_stage(read_save_dir(save), ExportOptions(roam_checkout=fake_roam))
+    card = stage.GetPrimAtPath("/World/Surface/Room_0_0/Creatures/Bear_0_0_0")
+    assert card.IsValid()
+    assert not UsdShade.MaterialBindingAPI(card).ComputeBoundMaterial()[0]
+    assert not stage.GetPrimAtPath("/World/Looks")
+    assert len(caplog.records) == 1
+    assert "untextured" in caplog.records[0].getMessage()
+
+
 def test_player_location_id_follows_include_ids(world):
     stage_with = build_stage(world)
     with_ids = stage_with.GetPrimAtPath("/World/Player")

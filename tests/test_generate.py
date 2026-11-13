@@ -7,6 +7,7 @@ tests run Roam's real generator from ROAM_USD_ROAM_CHECKOUT.
 
 import json
 import textwrap
+from types import SimpleNamespace
 
 import pytest
 from pxr import Usd
@@ -281,6 +282,75 @@ def test_driver_argument_checks(tmp_path, fake_roam, kwargs, message):
 def test_not_a_checkout(tmp_path):
     with pytest.raises(GenerateError, match="not a Roam checkout"):
         check_checkout(tmp_path)
+
+
+def test_driver_records_unknown_room_type_when_roam_gives_none(tmp_path, fake_roam):
+    map_py = fake_roam / "src/world/map.py"
+    map_py.write_text(map_py.read_text().replace("return self.room_type", "return None"))
+    save = run_driver(fake_roam, 1, tmp_path / "s", radius=0, cave_depth=0)
+    assert read_manifest(save)["roomTypes"] == {"0,0,0": "unknown"}
+    assert read_generated(save).find_room(0, 0, 0).room_type == "unknown"
+
+
+# --- driver provenance and helpers (called in-process; they need no Roam imports) -----
+
+
+def test_roam_version_reads_version_txt(tmp_path):
+    (tmp_path / "version.txt").write_text("  1.2.3\n")
+    assert _driver._roam_version(str(tmp_path)) == "1.2.3"
+
+
+@pytest.mark.parametrize("content", [None, "", " \n"])
+def test_roam_version_unknown_when_missing_or_blank(tmp_path, content):
+    if content is not None:
+        (tmp_path / "version.txt").write_text(content)
+    assert _driver._roam_version(str(tmp_path)) == "unknown"
+
+
+def _git(cwd, *args):
+    import subprocess
+
+    command = ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", *args]
+    return subprocess.run(command, cwd=cwd, capture_output=True, text=True, check=True).stdout
+
+
+def test_git_commit_reads_head(tmp_path):
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "commit", "-q", "--allow-empty", "-m", "c")
+    head = _git(tmp_path, "rev-parse", "HEAD").strip()
+    assert len(head) == 40
+    assert _driver._git_commit(str(tmp_path)) == head
+
+
+def test_git_commit_unknown_without_a_commit(tmp_path):
+    _git(tmp_path, "init", "-q")  # a repository, but HEAD names no commit yet
+    assert _driver._git_commit(str(tmp_path)) == "unknown"
+
+
+def _stub_room(*cells):
+    """A room-shaped stub: each cell is a list of entity class names on one location."""
+    locations = {}
+    for i, names in enumerate(cells):
+        entities = {n: type(name, (), {})() for n, name in enumerate(names)}
+        locations[str(i)] = SimpleNamespace(getEntities=lambda e=entities: e)
+    grid = SimpleNamespace(getLocations=lambda: locations, getLocation=locations.__getitem__)
+    return SimpleNamespace(getGrid=lambda: grid)
+
+
+def test_has_entity_matches_the_exact_class_name():
+    room = _stub_room(["Grass"], ["Grass", "CaveEntrance"])
+    assert _driver._has_entity(room, "CaveEntrance")
+    assert not _driver._has_entity(room, "Cave")
+    assert not _driver._has_entity(_stub_room([], []), "CaveEntrance")
+
+
+def test_driver_main_needs_out_and_seed_unless_listing(tmp_path, capsys):
+    for argv in (["--seed", "1"], ["--out", str(tmp_path / "s")]):
+        with pytest.raises(SystemExit) as exc:
+            _driver.main(["--checkout", str(tmp_path), *argv])
+        assert exc.value.code == 2
+        assert "--out and --seed are required" in capsys.readouterr().err
+    assert not (tmp_path / "s").exists()
 
 
 # --- manifest -> world / stage ---------------------------------------------------------

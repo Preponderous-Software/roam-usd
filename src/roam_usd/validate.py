@@ -1,8 +1,8 @@
 """Stage validity checks with OpenUSD's validation framework.
 
-ARCHITECTURE.md's testing strategy names ``UsdUtils.ComplianceChecker``; usd-core
-26.x no longer ships it, and its successor is ``pxr.UsdValidation`` (the framework
-``usdchecker`` itself runs). Every registered validator is run.
+Uses ``pxr.UsdValidation`` (the framework ``usdchecker`` itself runs), as
+ARCHITECTURE.md § Testing strategy specifies; ``UsdUtils.ComplianceChecker``, its
+predecessor, is not shipped in usd-core 26.x. Every registered validator is run.
 """
 
 from __future__ import annotations

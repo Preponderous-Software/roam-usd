@@ -500,8 +500,7 @@ def test_build_world_reads_rooms_in_name_order(reverse):
     if reverse:
         files.reverse()
     message = (
-        "memory/rooms/room_0_0_0.json: room (0, 0, 0) is also stored in "
-        "memory/rooms/room_0_0.json"
+        "memory/rooms/room_0_0_0.json: room (0, 0, 0) is also stored in memory/rooms/room_0_0.json"
     )
     with pytest.raises(SaveFormatError, match=f"^{re.escape(message)}$"):
         build_world(files, None, None, "memory")

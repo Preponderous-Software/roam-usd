@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 import pytest
 
@@ -7,6 +8,7 @@ from roam_usd.cli import main
 from roam_usd.model import UNKNOWN_ROOM_TYPE
 from roam_usd.save import (
     SaveFormatError,
+    build_world,
     format_info,
     parse_background_color,
     parse_player_location,
@@ -435,3 +437,84 @@ def test_info_player_tile_not_found(tmp_path, room_x, location_id):
     )
     lines = format_info(read_save_dir(tmp_path)).splitlines()
     assert f"Player: room ({room_x}, 0, 0), tile not found" in lines
+
+
+# build_world is the core both save readers share; these call it directly with
+# in-memory (name, reader) pairs, as read_bundle_world does, with no folder on disk.
+
+
+def text_of(data):
+    return lambda: json.dumps(data)
+
+
+def never_read():
+    raise AssertionError("this file should not have been read")
+
+
+def test_build_world_from_in_memory_readers():
+    world = build_world(
+        [
+            ("room_0_0_-1.json", text_of(minimal_room(z=-1))),
+            ("room_0_0.json", text_of(minimal_room())),
+        ],
+        text_of({"roomX": 0, "roomY": 0, "locationId": "nowhere"}),
+        text_of({"tick": 7}),
+        "memory",
+    )
+    assert world.source == "memory"
+    assert [level.z for level in world.levels] == [0, -1]
+    assert world.find_room(0, 0, -1).source_file == "memory/rooms/room_0_0_-1.json"
+    assert (world.player.room_x, world.player.location_id) == (0, "nowhere")
+    assert world.tick == 7
+
+
+def test_build_world_without_player_or_tick_readers():
+    world = build_world([("room_0_0.json", text_of(minimal_room()))], None, None, "memory")
+    assert world.player is None
+    assert world.tick is None
+
+
+def test_build_world_never_reads_a_file_it_ignores(caplog):
+    with caplog.at_level(logging.WARNING):
+        world = build_world(
+            [("notes.txt", never_read), ("room_0_0.json", text_of(minimal_room()))],
+            None,
+            None,
+            "memory",
+        )
+    assert len(world.rooms()) == 1
+    assert "memory: ignoring file that is not a room file: notes.txt" in caplog.text
+
+
+def test_build_world_without_a_source_names_bare_room_paths():
+    with pytest.raises(SaveFormatError, match=r"^rooms/room_0_0\.json: not valid JSON"):
+        build_world([("room_0_0.json", lambda: "{")], None, None, "")
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_build_world_reads_rooms_in_name_order(reverse):
+    files = [
+        ("room_0_0.json", text_of(minimal_room())),
+        ("room_0_0_0.json", text_of(minimal_room(z=0))),
+    ]
+    if reverse:
+        files.reverse()
+    message = (
+        "memory/rooms/room_0_0_0.json: room (0, 0, 0) is also stored in "
+        "memory/rooms/room_0_0.json"
+    )
+    with pytest.raises(SaveFormatError, match=f"^{re.escape(message)}$"):
+        build_world(files, None, None, "memory")
+
+
+@pytest.mark.parametrize(
+    "player, tick, where",
+    [
+        (lambda: "{", None, "memory/playerLocation.json"),
+        (None, lambda: "{", "memory/tick.json"),
+    ],
+)
+def test_build_world_names_the_player_and_tick_files(player, tick, where):
+    rooms = [("room_0_0.json", text_of(minimal_room()))]
+    with pytest.raises(SaveFormatError, match=f"^{re.escape(where)}: not valid JSON"):
+        build_world(rooms, player, tick, "memory")

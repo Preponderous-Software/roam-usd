@@ -95,6 +95,37 @@ def test_shapes_follow_the_mapping():
     assert catalog.lookup("Bear").shape == "card"
 
 
+def test_stack_height_is_lift_plus_height():
+    plain = catalog.CatalogEntry("Probe", catalog.SOLID, "cube", 1.0, 0.7, (0.1, 0.2, 0.3))
+    raised = catalog.CatalogEntry("Probe", catalog.SOLID, "cube", 1.0, 0.7, (0.1, 0.2, 0.3), 0.25)
+    assert plain.lift == 0.0
+    assert plain.stack_height == pytest.approx(0.7)
+    assert raised.stack_height == pytest.approx(0.95)
+    # Leaves: the canopy's lift counts, so the next entity sits on top of the canopy.
+    assert catalog.lookup("Leaves").stack_height == pytest.approx(1.5)
+    # Creature cards are flat, so they add nothing to the stack.
+    assert catalog.lookup("Bear").stack_height == 0.0
+
+
+def test_individual_follows_the_category():
+    for category in catalog.CATEGORIES:
+        entry = catalog.CatalogEntry("Probe", category, "box", 0.5, 0.5, (0.0, 0.0, 0.0))
+        assert entry.individual == (category in (catalog.STATEFUL, catalog.CREATURE))
+
+
+def test_entries_are_frozen():
+    with pytest.raises(AttributeError):
+        catalog.lookup("Grass").height = 5.0
+
+
+def test_fallback_is_an_instanced_cube_outside_the_catalog():
+    fallback = catalog.FALLBACK
+    assert fallback.category == catalog.UNKNOWN and fallback.shape == "cube"
+    assert not fallback.individual
+    assert fallback.stack_height == pytest.approx(0.8)
+    assert not catalog.is_known(fallback.name)
+
+
 def test_unknown_class_returns_fallback_and_warns_once(caplog):
     with caplog.at_level(logging.WARNING, logger="roam_usd.catalog"):
         first = catalog.lookup("Glowshroom")

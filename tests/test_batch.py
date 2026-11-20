@@ -3,17 +3,19 @@
 import itertools
 
 import pytest
-from pxr import Usd, UsdGeom
+from pxr import Gf, Usd, UsdGeom
 
 from roam_usd.cli import main
 from roam_usd.generate import (
     MAX_BATCH,
+    GenerateError,
     generate_batch,
     generate_seed,
     index_name,
     parse_seeds,
     seed_prim_name,
     stage_name,
+    write_index,
 )
 from roam_usd.validate import validation_errors
 from test_generate import write_fake_roam
@@ -149,6 +151,74 @@ def test_batch_index_is_deterministic(tmp_path):
     _, a = generate_batch(roam, [1, 2], tmp_path / "a", radius=0)
     _, b = generate_batch(roam, [1, 2], tmp_path / "b", radius=0)
     assert a.read_bytes() == b.read_bytes()
+
+
+def write_box_stage(path, size, corner=(0.0, 0.0)):
+    """A minimal seed stage: one mesh whose authored extent spans ``size`` from ``corner``."""
+    stage = Usd.Stage.CreateNew(str(path))
+    UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+    root = UsdGeom.Xform.Define(stage, "/World")
+    stage.SetDefaultPrim(root.GetPrim())
+    lo = Gf.Vec3f(corner[0], corner[1], 0.0)
+    hi = Gf.Vec3f(corner[0] + size[0], corner[1] + size[1], 1.0)
+    UsdGeom.Mesh.Define(stage, "/World/Box").CreateExtentAttr([lo, hi])
+    stage.GetRootLayer().Save()
+    return path
+
+
+def test_write_index_rejects_no_stages(tmp_path):
+    with pytest.raises(GenerateError, match="no seed stages"):
+        write_index({}, tmp_path)
+    assert not (tmp_path / "index.usda").exists()
+
+
+@pytest.mark.parametrize(
+    "sizes, cell",
+    [
+        ([(10, 6), (4, 20)], (14, 24)),  # widest and deepest worlds, plus the 4 m minimum margin
+        ([(100, 50)], (110, 60)),  # the margin grows to 10% of the larger side
+    ],
+)
+def test_write_index_cell_fits_the_largest_world(tmp_path, sizes, cell):
+    stages = {
+        seed: write_box_stage(tmp_path / stage_name(seed), size)
+        for seed, size in enumerate(sizes, start=1)
+    }
+    stage = Usd.Stage.Open(str(write_index(stages, tmp_path)))
+    assert tuple(stage.GetRootLayer().customLayerData["roam:cellSize"]) == pytest.approx(cell)
+
+
+def test_write_index_puts_each_world_corner_at_its_cell_corner(tmp_path):
+    # cells are (10 + 4) x (6 + 4); three seeds make two columns, so seed 3 starts row two
+    stages = {
+        seed: write_box_stage(tmp_path / stage_name(seed), (10, 6), corner=(3, 5))
+        for seed in (1, 2, 3)
+    }
+    _, ranges = seed_ranges(write_index(stages, tmp_path))
+    corners = {seed: tuple(r.GetMin())[:2] for seed, r in ranges.items()}
+    assert corners == {1: (0, -6), 2: (14, -6), 3: (0, -16)}
+
+
+def test_write_index_keeps_seed_order_and_references_each_stage(tmp_path):
+    stages = {seed: write_box_stage(tmp_path / stage_name(seed), (2, 2)) for seed in (5, -1)}
+    index = write_index(stages, tmp_path)
+    stage = Usd.Stage.Open(str(index))
+    assert list(stage.GetRootLayer().customLayerData["roam:seeds"]) == [5, -1]
+    names = [prim.GetName() for prim in stage.GetPrimAtPath("/Index").GetChildren()]
+    assert names == ["Seed_5", "Seed_n1"]
+    assert stage.GetPrimAtPath("/Index/Seed_n1").GetCustomDataByKey("roam:seed") == -1
+    assert stage.GetPrimAtPath("/Index/Seed_n1/Box")
+    text = index.read_text()
+    assert "@./seed_5.usda@" in text and "@./seed_-1.usda@" in text
+
+
+def test_write_index_replaces_an_existing_index(tmp_path):
+    stages = {seed: write_box_stage(tmp_path / stage_name(seed), (2, 2)) for seed in (1, 2, 3)}
+    write_index(stages, tmp_path)
+    stage = Usd.Stage.Open(str(write_index({3: stages[3]}, tmp_path)))
+    assert list(stage.GetRootLayer().customLayerData["roam:seeds"]) == [3]
+    names = [prim.GetName() for prim in stage.GetPrimAtPath("/Index").GetChildren()]
+    assert names == ["Seed_3"]
 
 
 @pytest.mark.roam
